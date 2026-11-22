@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('ব্যবহারকারী ও অনুমতি', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1>ব্যবহারকারী, ভূমিকা ও অনুমতি</h1><p class="muted">শাখাভিত্তিক প্রবেশাধিকার নিয়ন্ত্রণ</p></div></div>
+
+    <div class="grid cols-main mb">
+        <div class="card">
+            <form class="toolbar" method="get" th:action="@{/admin/users}">
+                <div><label class="label" for="q">অনুসন্ধান</label>
+                    <input id="q" class="field" name="q" th:value="${q}" placeholder="নাম বা ইউজারনেম"></div>
+                <div><label class="label" for="filter">ভূমিকা</label>
+                    <select id="filter" class="field" name="filter">
+                        <option value="">সব</option>
+                        <option th:each="r : ${roles}" th:value="${r.name()}" th:text="${r.label}" th:selected="${filter == r.name()}"></option>
+                    </select></div>
+                <button class="btn primary" type="submit">খুঁজুন</button>
+            </form>
+            <div class="table-wrap"><table>
+                <thead><tr><th>নাম</th><th>ইউজারনেম</th><th>ভূমিকা</th><th>শাখা</th><th>অবস্থা</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="u : ${page.content}">
+                    <td><b th:text="${u.fullName}"></b></td><td th:text="${u.username}"></td>
+                    <td><span class="badge soft" th:text="${u.role.label}"></span></td>
+                    <td th:text="${u.branch != null} ? ${u.branch.name} : 'সব শাখা'"></td>
+                    <td><span class="badge" th:classappend="${u.active} ? 'good' : 'bad'" th:text="${u.active} ? 'সক্রিয়' : 'নিষ্ক্রিয়'"></span></td>
+                    <td><form th:action="@{/admin/users/{id}/toggle(id=${u.id})}" method="post">
+                        <button class="btn sm" type="submit" th:text="${u.active} ? 'নিষ্ক্রিয় করুন' : 'সক্রিয় করুন'"></button></form></td>
+                </tr>
+                <tr th:if="${page.empty}"><td colspan="6" class="empty">কোনো ব্যবহারকারী পাওয়া যায়নি।</td></tr>
+                </tbody>
+            </table></div>
+            <div th:replace="~{fragments/form :: pager(${page}, '/admin/users')}"></div>
+        </div>
+
+        <div class="card pad">
+            <h2 class="mb">নতুন ব্যবহারকারী</h2>
+            <form th:action="@{/admin/users}" th:object="${form}" method="post" novalidate>
+                <div th:replace="~{fragments/form :: input('ইউজারনেম','username','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('পূর্ণ নাম','fullName','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)','password','password',null)}"></div>
+                <div class="fld"><label class="label" for="role">ভূমিকা</label>
+                    <select class="field" id="role" th:field="*{role}">
+                        <option th:each="r : ${roles}" th:value="${r.name()}" th:text="${r.label}"></option>
+                    </select></div>
+                <div class="fld"><label class="label" for="branchId">শাখা (সুপার অ্যাডমিন/মালিকের জন্য প্রযোজ্য নয়)</label>
+                    <select class="field" id="branchId" th:field="*{branchId}">
+                        <option value="">—</option>
+                        <option th:each="b : ${branchList}" th:value="${b.id}" th:text="${b.name}"></option>
+                    </select></div>
+                <button class="btn primary" type="submit">ব্যবহারকারী তৈরি করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card pad">
+        <h2 class="mb">ভূমিকা ও অনুমতি ম্যাট্রিক্স</h2>
+        <div class="table-wrap"><table style="min-width:520px">
+            <thead><tr><th>ভূমিকা</th><th>বিক্রয়/POS</th><th>ফেরত</th><th>স্টক দেখা</th><th>স্টক পরিবর্তন</th><th>ক্রয় ও বকেয়া</th><th>রিপোর্ট</th><th>প্রশাসন</th></tr></thead>
+            <tbody>
+            <tr><td>সুপার অ্যাডমিন / মালিক</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>শাখা ম্যানেজার</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+            <tr><td>ফার্মাসিস্ট</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>ক্যাশিয়ার</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>ইনভেন্টরি ম্যানেজার</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

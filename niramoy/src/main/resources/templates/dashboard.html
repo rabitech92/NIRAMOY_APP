@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/layout :: layout('ড্যাশবোর্ড', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>ড্যাশবোর্ড</h1><p class="muted">আজকের কার্যক্রমের এক নজরে সারাংশ</p></div>
+        <a class="btn primary" th:href="@{/pos}">+ নতুন বিক্রয়</a>
+    </div>
+
+    <div class="grid cols-7 mb">
+        <div class="card stat"><i data-lucide="trending-up"></i><div class="k">আজকের বিক্রয়</div><div class="v" th:text="${@fmt.money(d.todaySales)}"></div></div>
+        <div class="card stat"><i data-lucide="chart-no-axes-combined"></i><div class="k">আজকের লাভ</div><div class="v" th:text="${@fmt.money(d.todayProfit)}"></div></div>
+        <div class="card stat"><i data-lucide="wallet"></i><div class="k">গ্রাহক বকেয়া</div><div class="v" th:text="${@fmt.money(d.receivable)}"></div></div>
+        <div class="card stat"><i data-lucide="package-minus"></i><div class="k">কম স্টক</div><div class="v" th:text="${d.lowStock}"></div></div>
+        <div class="card stat"><i data-lucide="calendar-clock"></i><div class="k">মেয়াদ ঘনিয়ে এসেছে</div><div class="v" th:text="${d.expiring}"></div></div>
+        <div class="card stat"><i data-lucide="pill"></i><div class="k">মোট ব্যাচ</div><div class="v" th:text="${d.medicineCount}"></div></div>
+        <div class="card stat"><i data-lucide="building-2"></i><div class="k">সক্রিয় শাখা</div><div class="v" th:text="${d.branchCount}"></div></div>
+    </div>
+
+    <div class="grid cols-main mb">
+        <div class="card pad">
+            <h2>গত ৭ দিনের বিক্রয়</h2>
+            <div class="chart-box mt"><canvas id="salesChart" role="img" aria-label="সাত দিনের বিক্রয়"></canvas></div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">পেমেন্ট সারাংশ (৭ দিন)</h2>
+            <p class="muted small" th:if="${#lists.isEmpty(d.paymentMix)}">এখনো কোনো বিক্রয় নেই।</p>
+            <div th:each="row : ${d.paymentMix}" class="mb small">
+                <div class="row between"><span th:text="${row.label}"></span><b th:text="${row.percent} + '%'"></b></div>
+                <div class="bar"><div th:style="'width:' + ${row.percent} + '%'"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid cols-2">
+        <div class="card pad">
+            <h2 class="mb">সাম্প্রতিক বিক্রয়</h2>
+            <div class="table-wrap"><table>
+                <thead><tr><th>ইনভয়েস</th><th>শাখা</th><th>পেমেন্ট</th><th class="right">মোট</th></tr></thead>
+                <tbody>
+                <tr th:each="s : ${d.recentSales}">
+                    <td><a class="link" th:href="@{/sales/{id}(id=${s.id})}" th:text="${s.invoiceNo}"></a></td>
+                    <td th:text="${s.branch.name}"></td><td th:text="${s.paymentMethod.label}"></td>
+                    <td class="right" th:text="${@fmt.money(s.total)}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(d.recentSales)}"><td colspan="4" class="empty">কোনো বিক্রয় পাওয়া যায়নি।</td></tr>
+                </tbody>
+            </table></div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">অগ্রাধিকার সতর্কতা</h2>
+            <div class="alert-item" th:if="${d.lowStock > 0}" th:text="'কম স্টকের ' + ${d.lowStock} + 'টি ব্যাচ পুনরায় সংগ্রহ করুন।'"></div>
+            <div class="alert-item" th:if="${d.expiring > 0}" th:text="${d.expiring} + 'টি ব্যাচের মেয়াদ ৯০ দিনের মধ্যে শেষ হবে।'"></div>
+            <div class="alert-item" th:if="${d.supplierDue.signum() > 0}" th:text="'সরবরাহকারীর মোট বকেয়া ' + ${@fmt.money(d.supplierDue)}"></div>
+            <div class="alert-item" th:if="${dueRefills > 0}" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','CASHIER')">
+                <span th:text="${dueRefills} + 'জন গ্রাহকের নিয়মিত ওষুধের রিফিলের সময় হয়েছে।'"></span>
+                <a class="link" th:href="@{/refills(filter='DUE')}">দেখুন →</a></div>
+            <p class="muted" th:if="${d.lowStock == 0 and d.expiring == 0 and d.supplierDue.signum() == 0 and dueRefills == 0}">কোনো জরুরি সতর্কতা নেই।</p>
+            <a class="btn mt" th:href="@{/inventory(filter='LOW')}">ইনভেন্টরি দেখুন</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script th:inline="javascript">
+        (function () {
+            if (!window.Chart) return;
+            new Chart(document.getElementById('salesChart'), {
+                type: 'bar',
+                data: { labels: /*[[${d.trendLabels}]]*/ [], datasets: [{ data: /*[[${d.trendValues}]]*/ [],
+                        backgroundColor: '#2baf83', borderRadius: 6, maxBarThickness: 42 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                           scales: { x: { grid: { display: false } }, y: { beginAtZero: true } } }
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('সাবস্ক্রিপশন ব্যবস্থাপনা', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>সাবস্ক্রিপশন ব্যবস্থাপনা</h1><p class="muted">পেমেন্ট যাচাই, সরাসরি সক্রিয় করা ও প্ল্যান সম্পাদনা (শুধু সুপার অ্যাডমিন)</p></div>
+        <a class="btn" th:href="@{/subscription}">← স্ট্যাটাস</a>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">যাচাই অপেক্ষায় থাকা অনুরোধ</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>প্ল্যান</th><th class="right">পরিমাণ</th><th>পদ্ধতি / TrxID</th><th>প্রেরক নম্বর</th><th>অনুরোধকারী</th><th>কাজ</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${pending}">
+                <td th:text="${r.plan.name}"></td>
+                <td class="right" th:text="${@fmt.money(r.amount)}"></td>
+                <td><span th:text="${r.paymentMethod.label}"></span><br><b th:text="${r.trxId ?: '—'}"></b></td>
+                <td th:text="${r.senderNumber ?: '—'}"></td>
+                <td><span th:text="${r.requestedBy}"></span><br><small class="muted" th:text="${@fmt.dateTime(r.requestedAt)}"></small></td>
+                <td>
+                    <div class="row gap wrap">
+                        <form th:action="@{/subscription/{id}/approve(id=${r.id})}" method="post"
+                              onsubmit="return confirm('পেমেন্ট যাচাই করেছেন? সাবস্ক্রিপশন সক্রিয় করা হবে।')">
+                            <button class="btn sm primary" type="submit">✔ যাচাই করে সক্রিয় করুন</button></form>
+                        <form class="inline-form" th:action="@{/subscription/{id}/reject(id=${r.id})}" method="post">
+                            <input class="field" name="reason" placeholder="প্রত্যাখ্যানের কারণ" aria-label="কারণ">
+                            <button class="btn sm danger" type="submit">প্রত্যাখ্যান</button></form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(pending)}"><td colspan="6" class="empty">কোনো অনুরোধ অপেক্ষায় নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">সরাসরি সক্রিয় করুন (পেমেন্ট হাতে পেলে)</h2>
+        <form th:action="@{/subscription/grant}" method="post" class="grid cols-4" style="align-items:end">
+            <div><label class="label">প্ল্যান</label>
+                <select class="field" name="planId" aria-label="প্ল্যান">
+                    <option th:each="p : ${allPlans}" th:if="${!p.free and p.active}" th:value="${p.id}" th:text="${p.name} + ' — ' + ${@fmt.money(p.price)}"></option>
+                </select></div>
+            <div><label class="label">পেমেন্ট পদ্ধতি</label>
+                <select class="field" name="method" aria-label="পদ্ধতি">
+                    <option th:each="m : ${methods}" th:value="${m.name()}" th:text="${m.label}"></option>
+                </select></div>
+            <div><label class="label">TrxID (ক্যাশ ছাড়া আবশ্যক)</label><input class="field" name="trxId" maxlength="60"></div>
+            <div><label class="label">নোট</label><input class="field" name="note" maxlength="255"></div>
+            <div><button class="btn primary" type="submit">সক্রিয় করুন</button></div>
+        </form>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">প্ল্যান সম্পাদনা</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>প্ল্যান</th><th>মূল্য (৳)</th><th>মেয়াদ (দিন)</th><th>সর্বোচ্চ শাখা</th><th>সর্বোচ্চ ব্যবহারকারী</th><th>চালু</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="p : ${allPlans}">
+                <td><b th:text="${p.name}"></b><br><small class="muted" th:text="${p.code}"></small>
+                    <form th:id="'planForm' + ${p.id}" th:action="@{/subscription/plans/{id}(id=${p.id})}" method="post"></form></td>
+                <td><input class="field" style="width:110px" type="number" step="0.01" min="0" name="price" th:value="${p.price}" th:attr="form='planForm' + ${p.id}"></td>
+                <td><input class="field" style="width:90px" type="number" min="1" name="durationDays" th:value="${p.durationDays}" th:attr="form='planForm' + ${p.id}"></td>
+                <td><input class="field" style="width:90px" type="number" min="1" name="maxBranches" th:value="${p.maxBranches}" th:attr="form='planForm' + ${p.id}"></td>
+                <td><input class="field" style="width:90px" type="number" min="1" name="maxUsers" th:value="${p.maxUsers}" th:attr="form='planForm' + ${p.id}"></td>
+                <td><input type="checkbox" name="active" value="true" th:checked="${p.active}" th:attr="form='planForm' + ${p.id}" aria-label="চালু"></td>
+                <td><button class="btn sm" type="submit" th:attr="form='planForm' + ${p.id}">সংরক্ষণ</button></td>
+            </tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad">
+        <h2 class="mb">সাম্প্রতিক রেকর্ড</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>প্ল্যান</th><th>অবস্থা</th><th>শুরু</th><th>শেষ</th><th class="right">পরিমাণ</th><th>TrxID</th><th>সিদ্ধান্ত নিয়েছেন</th></tr></thead>
+            <tbody>
+            <tr th:each="h : ${history}">
+                <td th:text="${h.plan.name}"></td>
+                <td><span class="badge" th:classappend="${h.state.name() == 'ACTIVE'} ? 'good' : (${h.state.name() == 'PENDING'} ? 'warn' : 'bad')" th:text="${h.state.label}"></span></td>
+                <td th:text="${h.startDate != null} ? ${@fmt.date(h.startDate)} : '—'"></td>
+                <td th:text="${h.endDate != null} ? ${@fmt.date(h.endDate)} : '—'"></td>
+                <td class="right" th:text="${@fmt.money(h.amount)}"></td>
+                <td th:text="${h.trxId ?: '—'}"></td>
+                <td th:text="${h.decidedBy ?: '—'}"></td>
+            </tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('ইনভয়েস', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <!-- থার্মাল রিসিপ্ট (৮০ বা ৫৮ মিমি রোল) — শুধু এই পেজ প্রিন্ট করার সময় প্রযোজ্য -->
+    <style id="paperStyle" media="print">@page{size:80mm auto;margin:2mm}</style>
+    <style id="thermalCss" media="print">
+        html, body {
+            width: var(--paper, 74mm) !important;
+            margin: 0 !important; padding: 0 !important;
+            background: #fff !important; color: #000 !important;
+            font-family: 'Hind Siliguri', 'Segoe UI', sans-serif;
+            font-size: 11px; line-height: 1.3;
+        }
+        .shell, .workspace { display: block !important; min-height: 0 !important; }
+        .content { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+        .no-print, .no-thermal, .page-head, .btn, .badge, .sidebar, .topbar, .footer, .overlay, .alert {
+            display: none !important;
+        }
+        .invoice {
+            width: 100% !important; max-width: 100% !important;
+            border: none !important; box-shadow: none !important; border-radius: 0 !important;
+            padding: 0 !important; margin: 0 !important; background: #fff !important;
+        }
+        .invoice h2 { font-size: 15px; text-align: center; margin: 0 0 2px; }
+        .invoice .row.between { display: block !important; text-align: center; }
+        .invoice .right { text-align: right; }
+        .invoice .row.between .right { text-align: center !important; }
+        .invoice p, .invoice .small, .invoice .muted { font-size: 10px; margin: 2px 0; color: #000 !important; }
+        .invoice .center { text-align: center; }
+        .table-wrap { overflow: visible !important; width: 100% !important; margin: 4px 0 0 !important; }
+        .invoice table { width: 100% !important; min-width: 0 !important; font-size: 10.5px; border-collapse: collapse; }
+        .invoice th, .invoice td {
+            padding: 2px 1px !important; border: none !important;
+            border-bottom: 1px dashed #777 !important; background: none !important;
+            word-break: break-word; vertical-align: top;
+        }
+        .invoice th { font-weight: 700; border-top: 1px solid #000 !important; border-bottom: 1px solid #000 !important; }
+        .invoice .totals { max-width: 100% !important; margin: 6px 0 0 !important; font-size: 11px; }
+        .invoice .totals div { display: flex; justify-content: space-between; padding: 1px 0; }
+        .invoice .totals .grand {
+            border-top: 1px dashed #000; border-bottom: 1px dashed #000;
+            font-weight: 700; font-size: 13px; margin: 3px 0; padding: 3px 0;
+        }
+        .invoice tr:hover td { background: none !important; }
+    </style>
+
+    <div class="page-head no-print">
+        <div><h1 th:text="${sale.invoiceNo}">INV</h1><p class="muted">ইনভয়েসের বিবরণ</p></div>
+        <div class="row gap wrap">
+            <label class="small row gap" for="paperSel">কাগজ:
+                <select id="paperSel" class="field" style="width:auto;min-height:36px">
+                    <option value="80">৮০ মিমি থার্মাল</option>
+                    <option value="58">৫৮ মিমি থার্মাল</option>
+                </select>
+            </label>
+            <button type="button" class="btn primary" onclick="printReceipt()">🖨 থার্মাল প্রিন্ট</button>
+            <a class="btn" th:href="@{/sales}">← তালিকা</a>
+            <a class="btn danger" th:if="${sale.status.name() == 'COMPLETED'}"
+               sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST')"
+               th:href="@{/returns/{id}(id=${sale.id})}">ফেরত দিন</a>
+        </div>
+    </div>
+
+    <div class="card invoice">
+        <div class="row between wrap">
+            <div><h2>নিরাময় ফার্মেসি</h2><p class="muted" th:text="${sale.branch.name} + ' শাখা'"></p></div>
+            <div class="right"><b th:text="${sale.invoiceNo}"></b><br>
+                <span class="muted small" th:text="${@fmt.dateTime(sale.createdAt)}"></span><br>
+                <span class="muted small" th:if="${sale.cashier != null}" th:text="'বিক্রেতা: ' + ${sale.cashier.fullName}"></span>
+                <span class="badge warn" th:if="${sale.status.name() == 'RETURNED'}">ফেরত সম্পন্ন</span></div>
+        </div>
+        <div class="mt small" th:if="${sale.customerName}">
+            <div>গ্রাহক: <b th:text="${sale.customerName}"></b></div>
+            <div th:if="${sale.customerPhone}">মোবাইল: <b th:text="${sale.customerPhone}"></b></div>
+        </div>
+
+        <div class="table-wrap mt"><table style="min-width:0">
+            <thead><tr><th>ওষুধ</th><th class="no-thermal">ব্যাচ</th><th class="right">পরিমাণ</th><th class="right no-thermal">দাম</th><th class="right">মোট</th></tr></thead>
+            <tbody>
+            <tr th:each="i : ${sale.items}">
+                <td th:text="${i.medicineName}"></td>
+                <td class="no-thermal" th:text="${i.batchNo}"></td>
+                <td class="right" th:text="${i.quantity} + ' ' + ${i.unitLabel ?: 'পিস'}"></td>
+                <td class="right no-thermal" th:text="${@fmt.money(i.unitPrice)}"></td>
+                <td class="right" th:text="${@fmt.money(i.lineTotal)}"></td>
+            </tr>
+            </tbody>
+        </table></div>
+
+        <div class="totals mt" style="max-width:320px;margin-left:auto">
+            <div><span>উপমোট</span><b th:text="${@fmt.money(sale.subtotal)}"></b></div>
+            <div><span>ছাড়</span><b th:text="'−' + ${@fmt.money(sale.discount)}"></b></div>
+            <div><span th:text="'VAT (' + ${sale.vatPercent.stripTrailingZeros().toPlainString()} + '%)'">VAT</span><b th:text="${@fmt.money(sale.vatAmount)}"></b></div>
+            <div class="grand"><span>সর্বমোট</span><span th:text="${@fmt.money(sale.total)}"></span></div>
+            <div><span>পেমেন্ট</span><b th:text="${sale.paymentMethod.label}"></b></div>
+            <div th:if="${sale.dueAmount.signum() > 0}"><span>পরিশোধিত</span><b th:text="${@fmt.money(sale.total.subtract(sale.dueAmount))}"></b></div>
+            <div th:if="${sale.dueAmount.signum() > 0}"><span>বকেয়া</span><b th:text="${@fmt.money(sale.dueAmount)}"></b></div>
+        </div>
+        <p class="muted small center mt">ধন্যবাদ! ওষুধ ফেরতের জন্য ইনভয়েস সংরক্ষণ করুন।</p>
+    </div>
+
+    <script>
+        (function () {
+            var KEY = 'niramoy.paper';
+            var sel = document.getElementById('paperSel');
+            var st = document.getElementById('paperStyle');
+            var rules = document.getElementById('thermalCss');
+
+            function setWidth(w) { document.documentElement.style.setProperty('--paper', (w - 6) + 'mm'); }
+
+            // রিসিপ্টের আসল উচ্চতা (মিমি): সাময়িকভাবে রিসিপ্ট লেআউট চালু করে মাপা হয়
+            function contentHeightMm(w) {
+                var inv = document.querySelector('.invoice');
+                var prev = rules.media;
+                setWidth(w);
+                rules.media = 'all';
+                var r = inv.getBoundingClientRect();
+                var px = r.top + window.pageYOffset + r.height;
+                rules.media = prev;
+                return Math.ceil(px * 25.4 / 96);
+            }
+
+            function apply(w) {
+                w = parseInt(w, 10) || 80;
+                setWidth(w);
+                // উচ্চতা সবসময় প্রস্থের চেয়ে বেশি রাখা হয়, নইলে Chrome পেজটিকে landscape ধরে নেয়
+                var h = Math.max(contentHeightMm(w) + 8, w + 12);
+                st.textContent = '@page{size:' + w + 'mm ' + h + 'mm;margin:2mm}';
+            }
+
+            var saved = '80';
+            try { saved = localStorage.getItem(KEY) || '80'; } catch (e) { }
+            sel.value = saved;
+            apply(saved);
+            window.addEventListener('load', function () { apply(sel.value); });   // ফন্ট লোড হওয়ার পর আবার মাপা
+            sel.addEventListener('change', function () {
+                try { localStorage.setItem(KEY, sel.value); } catch (e) { }
+                apply(sel.value);
+            });
+            window.printReceipt = function () { apply(sel.value); window.print(); };
+        })();
+    </script>
+</div>
+</body>
+</html>

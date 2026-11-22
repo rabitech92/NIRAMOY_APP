@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('বিক্রয় ফেরত', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1>বিক্রয় ফেরত ও রিফান্ড</h1><p class="muted">ইনভয়েস যাচাই করে ফেরত প্রক্রিয়া করুন</p></div></div>
+    <div class="card">
+        <form class="toolbar" method="get" th:action="@{/returns}">
+            <div><label class="label" for="q">ইনভয়েস অনুসন্ধান</label>
+                <input id="q" class="field" name="q" th:value="${q}" placeholder="ইনভয়েস নম্বর বা গ্রাহক"></div>
+            <div><label class="label" for="filter">অবস্থা</label>
+                <select id="filter" class="field" name="filter">
+                    <option value="COMPLETED" th:selected="${filter == 'COMPLETED'}">সক্রিয়</option>
+                    <option value="RETURNED" th:selected="${filter == 'RETURNED'}">ফেরত সম্পন্ন</option>
+                    <option value="" th:selected="${filter == ''}">সব</option>
+                </select></div>
+            <button class="btn primary" type="submit">খুঁজুন</button>
+        </form>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ইনভয়েস</th><th>সময়</th><th>শাখা</th><th class="right">মোট</th><th>অবস্থা</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${page.content}">
+                <td><b th:text="${s.invoiceNo}"></b></td>
+                <td th:text="${@fmt.dateTime(s.createdAt)}"></td>
+                <td th:text="${s.branch.name}"></td>
+                <td class="right" th:text="${@fmt.money(s.total)}"></td>
+                <td><span class="badge" th:classappend="${s.status.name() == 'COMPLETED'} ? 'good' : 'warn'" th:text="${s.status.label}"></span></td>
+                <td><a class="link" th:if="${s.status.name() == 'COMPLETED'}" th:href="@{/returns/{id}(id=${s.id})}">ফেরত দিন</a></td>
+            </tr>
+            <tr th:if="${page.empty}"><td colspan="6" class="empty">কোনো ইনভয়েস পাওয়া যায়নি।</td></tr>
+            </tbody>
+        </table></div>
+        <div th:replace="~{fragments/form :: pager(${page}, '/returns')}"></div>
+    </div>
+
+    <div class="card pad mt">
+        <h2 class="mb">সাম্প্রতিক ফেরত</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ইনভয়েস</th><th>সময়</th><th class="right">রিফান্ড</th><th>পদ্ধতি</th><th>কারণ</th><th>স্টক ফেরত</th><th>প্রক্রিয়াকারী</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${recentReturns}">
+                <td th:text="${r.sale.invoiceNo}"></td><td th:text="${@fmt.dateTime(r.createdAt)}"></td>
+                <td class="right" th:text="${@fmt.money(r.refundAmount)}"></td>
+                <td th:text="${r.refundMethod.label}"></td><td th:text="${r.reason}"></td>
+                <td th:text="${r.stockRestored} ? 'হ্যাঁ' : 'না'"></td><td th:text="${r.processedBy}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(recentReturns)}"><td colspan="7" class="empty">কোনো ফেরত নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

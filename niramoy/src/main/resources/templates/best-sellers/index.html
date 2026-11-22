@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('বেশি বিক্রিত ওষুধ', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>বেশি বিক্রিত ওষুধ</h1>
+            <p class="muted">কোন ওষুধ সবচেয়ে বেশি বিক্রি হয় তার তালিকা। ⭐ চিহ্নিত ওষুধ ইনভেন্টরি ও POS-এ "বেশি বিক্রিত" ব্যাজসহ দেখায়।</p></div>
+        <form th:action="@{/best-sellers/mark-top}" method="post" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')"
+              onsubmit="return confirm('তালিকার সবগুলো ওষুধ বেশি বিক্রিত হিসেবে চিহ্নিত করবেন?')">
+            <input type="hidden" name="days" th:value="${days}"><input type="hidden" name="sort" th:value="${sort}">
+            <input type="hidden" name="limit" th:value="${limit}">
+            <button class="btn primary" type="submit" th:text="'⭐ শীর্ষ ' + ${limit} + 'টি একসাথে চিহ্নিত করুন'"></button>
+        </form>
+    </div>
+
+    <div class="card pad mb">
+        <form method="get" th:action="@{/best-sellers}" class="row gap wrap" style="align-items:flex-end">
+            <div><label class="label" for="days">সময়</label>
+                <select id="days" class="field" name="days" onchange="this.form.submit()">
+                    <option th:each="o : ${dayOptions}" th:value="${o}" th:text="${o == 0} ? 'সব সময়' : 'গত ' + ${o} + ' দিন'" th:selected="${o == days}"></option>
+                </select></div>
+            <div><label class="label" for="sort">সাজানো</label>
+                <select id="sort" class="field" name="sort" onchange="this.form.submit()">
+                    <option value="qty" th:selected="${sort == 'qty'}">বিক্রিত পরিমাণ (পিস)</option>
+                    <option value="revenue" th:selected="${sort == 'revenue'}">বিক্রয়ের টাকা</option>
+                    <option value="orders" th:selected="${sort == 'orders'}">ইনভয়েস সংখ্যা</option>
+                </select></div>
+            <div><label class="label" for="limit">কয়টি দেখাবেন</label>
+                <select id="limit" class="field" name="limit" onchange="this.form.submit()">
+                    <option th:each="n : ${#numbers.sequence(10, 50, 10)}" th:value="${n}" th:text="${n}" th:selected="${n == limit}"></option>
+                </select></div>
+        </form>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb" th:text="'র‍্যাংকিং — ' + ${periodLabel}">র‍্যাংকিং</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>#</th><th>ওষুধ</th><th class="right">বিক্রিত (পিস)</th><th class="right">বিক্রয় (৳)</th>
+                <th class="right">ইনভয়েস</th><th class="right">বর্তমান স্টক (পিস)</th><th>চিহ্ন</th></tr></thead>
+            <tbody>
+            <tr th:each="r, st : ${rows}">
+                <td th:text="${st.count}"></td>
+                <td><b th:text="${r.name}"></b></td>
+                <td class="right" th:text="${r.pieces}"></td>
+                <td class="right" th:text="${@fmt.money(r.revenue)}"></td>
+                <td class="right" th:text="${r.invoices}"></td>
+                <td class="right"><span th:text="${r.stock}"></span>
+                    <span class="badge bad" th:if="${r.stock <= r.pieces / 4 and r.stock >= 0}" title="বিক্রির তুলনায় স্টক কম">কম</span></td>
+                <td>
+                    <span class="badge warn" th:if="${r.marked}">⭐ চিহ্নিত</span>
+                    <form th:unless="${r.marked}" th:action="@{/best-sellers/mark}" method="post" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')" style="display:inline">
+                        <input type="hidden" name="name" th:value="${r.name}"><input type="hidden" name="days" th:value="${days}">
+                        <input type="hidden" name="sort" th:value="${sort}"><input type="hidden" name="limit" th:value="${limit}">
+                        <button class="btn sm" type="submit">⭐ চিহ্নিত করুন</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="empty">এই সময়ে কোনো বিক্রয় নেই।</td></tr>
+            </tbody>
+        </table></div>
+        <p class="muted small mt">"কম" ব্যাজ: বর্তমান স্টক এই সময়ের বিক্রির এক-চতুর্থাংশ বা তার কম — নতুন করে কেনার কথা ভাবুন।</p>
+    </div>
+
+    <div class="card pad">
+        <h2 class="mb" th:text="'চিহ্নিত বেশি-বিক্রিত ওষুধ (' + ${#lists.size(marks)} + ')'">চিহ্নিত</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ওষুধ</th><th>চিহ্নিতের সময় পরিসংখ্যান</th><th>কখন / কে</th><th>ধরন</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="m : ${marks}">
+                <td><b th:text="${m.displayName}"></b></td>
+                <td><span th:text="${m.soldPieces} + ' পিস · ' + ${@fmt.money(m.revenue)}"></span>
+                    <div class="small muted" th:text="${m.periodLabel ?: ''}"></div></td>
+                <td><span th:text="${@fmt.dateTime(m.markedAt)}"></span><div class="small muted" th:text="${m.markedBy ?: ''}"></div></td>
+                <td><span class="badge soft" th:text="${m.autoMarked} ? 'স্বয়ংক্রিয় (শীর্ষ তালিকা)' : 'হাতে'"></span></td>
+                <td><form th:action="@{/best-sellers/unmark}" method="post" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')"
+                          onsubmit="return confirm('এই ওষুধের চিহ্ন তুলে নেবেন?')">
+                    <input type="hidden" name="name" th:value="${m.displayName}"><input type="hidden" name="days" th:value="${days}">
+                    <input type="hidden" name="sort" th:value="${sort}"><input type="hidden" name="limit" th:value="${limit}">
+                    <button class="btn sm danger" type="submit">চিহ্ন তুলুন</button></form></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(marks)}"><td colspan="5" class="empty">এখনো কোনো ওষুধ চিহ্নিত করা হয়নি।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

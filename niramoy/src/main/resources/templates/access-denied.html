@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('প্রবেশাধিকার নেই', ~{::content})}">
+<body>
+<div th:fragment="content" class="card pad" style="max-width:560px">
+    <h1>প্রবেশাধিকার নেই</h1>
+    <p class="muted mt">এই পেজ দেখার অনুমতি আপনার ভূমিকার নেই। প্রয়োজনে প্রশাসকের সাথে যোগাযোগ করুন।</p>
+    <a class="btn primary mt" th:href="@{/}">ড্যাশবোর্ডে ফিরুন</a>
+</div>
+</body>
+</html>

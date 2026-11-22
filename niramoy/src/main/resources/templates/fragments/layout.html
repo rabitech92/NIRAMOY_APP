@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="bn" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(title, content)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <title th:text="${title} + ' · নিরাময়'">নিরাময়</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js" defer></script>
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+<div class="shell">
+    <div id="navOverlay" class="overlay"></div>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="brand">
+            <span class="logo">✚</span>
+            <div><strong>নিরাময়</strong><small>ফার্মেসি ব্যবস্থাপনা</small></div>
+        </div>
+        <nav aria-label="প্রধান নেভিগেশন">
+            <div class="nav-group">ওভারভিউ</div>
+            <a class="nav-item" th:classappend="${uri == '/'} ? 'active'" th:href="@{/}"><i data-lucide="layout-dashboard"></i>ড্যাশবোর্ড</a>
+
+            <div class="nav-group" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','CASHIER')">কার্যক্রম</div>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','CASHIER')"
+               th:classappend="${#strings.startsWith(uri,'/pos')} ? 'active'" th:href="@{/pos}"><i data-lucide="shopping-cart"></i>বিক্রয় ও POS</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','CASHIER')"
+               th:classappend="${#strings.startsWith(uri,'/sales')} ? 'active'" th:href="@{/sales}"><i data-lucide="receipt"></i>ইনভয়েস</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST')"
+               th:classappend="${#strings.startsWith(uri,'/returns')} ? 'active'" th:href="@{/returns}"><i data-lucide="rotate-ccw"></i>বিক্রয় ফেরত</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','CASHIER')"
+               th:classappend="${#strings.startsWith(uri,'/refills')} ? 'active'" th:href="@{/refills}"><i data-lucide="repeat"></i>নিয়মিত ওষুধ (রিফিল)</a>
+
+            <div class="nav-group" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','INVENTORY_MANAGER')">ইনভেন্টরি</div>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','INVENTORY_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/inventory')} ? 'active'" th:href="@{/inventory}"><i data-lucide="pill"></i>ওষুধ ও স্টক</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','INVENTORY_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/best-sellers')} ? 'active'" th:href="@{/best-sellers}"><i data-lucide="star"></i>বেশি বিক্রিত ওষুধ</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','PHARMACIST','INVENTORY_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/purchases')} ? 'active'" th:href="@{/purchases}"><i data-lucide="truck"></i>ক্রয় তালিকা ও সরবরাহকারী</a>
+
+            <div class="nav-group" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')">অর্থনীতি</div>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/dues')} ? 'active'" th:href="@{/dues}"><i data-lucide="wallet"></i>বকেয়া ও পেমেন্ট</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/expenses')} ? 'active'" th:href="@{/expenses}"><i data-lucide="receipt-text"></i>খরচ ব্যবস্থাপনা</a>
+
+            <div class="nav-group" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER')">রিপোর্ট</div>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/reports')} ? 'active'" th:href="@{/reports}"><i data-lucide="chart-no-axes-combined"></i>রিপোর্ট ও বিশ্লেষণ</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/customers')} ? 'active'" th:href="@{/customers}"><i data-lucide="users-round"></i>গ্রাহক বিশ্লেষণ</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER')"
+               th:classappend="${#strings.startsWith(uri,'/business')} ? 'active'" th:href="@{/business}"><i data-lucide="landmark"></i>ক্রয়-বিক্রয় ও স্টক হিসাব</a>
+
+            <div class="nav-group" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')">প্রশাসন</div>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')"
+               th:classappend="${#strings.startsWith(uri,'/admin/users')} ? 'active'" th:href="@{/admin/users}"><i data-lucide="users"></i>ব্যবহারকারী</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')"
+               th:classappend="${#strings.startsWith(uri,'/admin/branches')} ? 'active'" th:href="@{/admin/branches}"><i data-lucide="building-2"></i>শাখা</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')"
+               th:classappend="${#strings.startsWith(uri,'/admin/settings')} ? 'active'" th:href="@{/admin/settings}"><i data-lucide="settings"></i>সেটিংস</a>
+            <a class="nav-item" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')"
+               th:classappend="${#strings.startsWith(uri,'/subscription')} ? 'active'" th:href="@{/subscription}"><i data-lucide="badge-check"></i>সাবস্ক্রিপশন</a>
+        </nav>
+    </aside>
+
+    <div class="workspace">
+        <header class="topbar">
+            <button type="button" class="btn menu-btn" data-toggle-nav aria-label="নেভিগেশন খুলুন">☰</button>
+            <div class="title" th:text="${title}">শিরোনাম</div>
+
+            <form th:if="${me != null and me.global}" th:action="@{/branch/switch}" method="post">
+                <input type="hidden" name="redirect" th:value="${uri}">
+                <label class="sr-only" for="branchTop" hidden>শাখা নির্বাচন</label>
+                <select id="branchTop" name="branchId" class="field" style="width:auto" onchange="this.form.submit()">
+                    <option value="">সব শাখা</option>
+                    <option th:each="b : ${allBranches}" th:value="${b.id}" th:text="${b.name}"
+                            th:selected="${b.id == activeBranchId}"></option>
+                </select>
+            </form>
+            <span th:if="${me != null and !me.global}" class="badge soft" th:text="${me.branchName}">শাখা</span>
+
+            <div class="small" style="text-align:right;line-height:1.2" th:if="${me != null}">
+                <b th:text="${me.fullName}">নাম</b><br><span class="muted" th:text="${me.role.label}">ভূমিকা</span>
+            </div>
+            <form th:action="@{/logout}" method="post"><button type="submit" class="btn sm">লগআউট</button></form>
+        </header>
+
+        <main class="content">
+            <div th:if="${success}" class="alert good" role="status" th:text="${success}"></div>
+            <div th:if="${error}" class="alert bad" role="alert" th:text="${error}"></div>
+            <div th:if="${subStatus != null and subStatus.warning}" class="alert warn" role="alert">
+                <span th:text="${subStatus.message}"></span>
+                <a class="link" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')" th:href="@{/subscription}"> নবায়ন করুন →</a>
+            </div>
+            <th:block th:replace="${content}">পেজের বিষয়বস্তু</th:block>
+        </main>
+        <footer class="footer">নিরাময় ফার্মেসি ব্যবস্থাপনা · v1.0</footer>
+    </div>
+</div>
+</body>
+</html>

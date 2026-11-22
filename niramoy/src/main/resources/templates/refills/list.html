@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('নিয়মিত ওষুধ (রিফিল)', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>নিয়মিত ওষুধ সাবস্ক্রিপশন</h1>
+            <p class="muted">গ্রাহক যে ওষুধ নিয়মিত নেন তার তালিকা, রিফিলের রিমাইন্ডার ও এক ক্লিকে বিল</p></div>
+        <a class="btn primary" th:href="@{/refills/new}">+ নতুন সাবস্ক্রিপশন</a>
+    </div>
+
+    <div class="card">
+        <form class="toolbar" method="get" th:action="@{/refills}">
+            <div><label class="label" for="q">অনুসন্ধান</label>
+                <input id="q" class="field" name="q" th:value="${q}" placeholder="গ্রাহকের নাম, মোবাইল বা প্ল্যান"></div>
+            <div><label class="label" for="filter">দেখান</label>
+                <select id="filter" class="field" name="filter">
+                    <option value="" th:selected="${filter == ''}">সক্রিয় সব</option>
+                    <option value="DUE" th:selected="${filter == 'DUE'}">আজ বা দেরি হয়েছে</option>
+                    <option value="WEEK" th:selected="${filter == 'WEEK'}">আগামী ৭ দিনের মধ্যে</option>
+                    <option value="PAUSED" th:selected="${filter == 'PAUSED'}">বিরতিতে</option>
+                    <option value="CANCELLED" th:selected="${filter == 'CANCELLED'}">বাতিল</option>
+                    <option value="ALL" th:selected="${filter == 'ALL'}">সব</option>
+                </select></div>
+            <button class="btn primary" type="submit">খুঁজুন</button>
+        </form>
+        <div class="table-wrap"><table>
+            <thead><tr><th>গ্রাহক</th><th>প্ল্যান</th><th>ওষুধ</th><th>পরের রিফিল</th><th>চক্র</th><th>অবস্থা</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${page.content}">
+                <td><b th:text="${s.customerName}"></b><br>
+                    <a class="link small" th:href="'tel:' + ${s.customerPhone}" th:text="${s.customerPhone}"></a></td>
+                <td><span th:text="${s.planName}"></span><br>
+                    <small class="muted" th:text="${s.frequencyDays} + ' দিন পরপর'"></small></td>
+                <td><div class="small" th:each="i : ${s.items}" th:text="${i.medicineName} + ' × ' + ${i.quantity} + ' ' + ${i.unit}"></div></td>
+                <td><span th:text="${@fmt.date(s.nextRefillDate)}"></span><br>
+                    <span class="badge bad" th:if="${s.status.name() == 'ACTIVE' and s.daysToNext < 0}" th:text="${-s.daysToNext} + ' দিন দেরি'"></span>
+                    <span class="badge warn" th:if="${s.status.name() == 'ACTIVE' and s.daysToNext == 0}">আজ</span>
+                    <span class="badge soft" th:if="${s.status.name() == 'ACTIVE' and s.daysToNext > 0}" th:text="${s.daysToNext} + ' দিন পরে'"></span></td>
+                <td th:text="${s.cycles}"></td>
+                <td><span class="badge" th:classappend="${s.status.name() == 'ACTIVE'} ? 'good' : (${s.status.name() == 'PAUSED'} ? 'warn' : 'bad')" th:text="${s.status.label}"></span></td>
+                <td><a class="link" th:href="@{/refills/{id}(id=${s.id})}">বিস্তারিত →</a></td>
+            </tr>
+            <tr th:if="${page.empty}"><td colspan="7" class="empty">কোনো সাবস্ক্রিপশন পাওয়া যায়নি।</td></tr>
+            </tbody>
+        </table></div>
+        <div th:replace="~{fragments/form :: pager(${page}, '/refills')}"></div>
+    </div>
+</div>
+</body>
+</html>

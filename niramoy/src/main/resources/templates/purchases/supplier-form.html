@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('সরবরাহকারী যোগ করুন', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><h1>সরবরাহকারী যোগ করুন</h1></div>
+    <div class="card pad" style="max-width:520px">
+        <form th:action="@{/purchases/suppliers}" th:object="${form}" method="post" novalidate>
+            <div th:replace="~{fragments/form :: input('সরবরাহকারীর নাম','name','text',null)}"></div>
+            <div th:replace="~{fragments/form :: input('ফোন নম্বর','phone','tel',null)}"></div>
+            <div class="row gap"><button class="btn primary" type="submit">সংরক্ষণ করুন</button>
+                <a class="btn" th:href="@{/purchases(tab='suppliers')}">বাতিল</a></div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

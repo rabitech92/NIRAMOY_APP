@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="bn" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>ত্রুটি · নিরাময়</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="login-wrap">
+    <div class="card login-card center">
+        <h1 th:text="${status == 404} ? 'পেজ পাওয়া যায়নি' : 'কিছু ভুল হয়েছে'">ত্রুটি</h1>
+        <p class="muted mt">অনুরোধটি সম্পন্ন করা যায়নি। আবার চেষ্টা করুন, সমস্যা থাকলে প্রশাসকের সাথে যোগাযোগ করুন।</p>
+        <p class="muted small mt" th:if="${status}" th:text="'কোড: ' + ${status}"></p>
+        <a class="btn primary mt" th:href="@{/}">ড্যাশবোর্ডে ফিরুন</a>
+    </div>
+</div>
+</body>
+</html>

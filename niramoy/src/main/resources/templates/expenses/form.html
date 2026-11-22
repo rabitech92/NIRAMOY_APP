@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('খরচ এন্ট্রি', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1 th:text="${edit} ? 'খরচ সম্পাদনা' : 'নতুন খরচ'">খরচ</h1>
+            <p class="muted" th:if="${!edit}">খরচ বর্তমান শাখার হিসাবে নথিভুক্ত হবে।</p>
+            <p class="muted" th:if="${edit}" th:text="${e.expenseNo} + ' — পেমেন্টের তথ্য বদলাতে বিস্তারিত পেজের “বাকি পরিশোধ” ব্যবহার করুন।'"></p></div>
+    </div>
+
+    <div class="card pad" style="max-width:860px">
+        <form th:action="${edit} ? @{/expenses/{id}(id=${expenseId})} : @{/expenses/save}" th:object="${form}" method="post" novalidate>
+            <div class="grid cols-2">
+                <div th:replace="~{fragments/form :: input('খরচের তারিখ','expenseDate','date',null)}"></div>
+                <div th:replace="~{fragments/form :: input('টাকার পরিমাণ (৳)','amount','number','0.01')}"></div>
+
+                <div class="fld"><label class="label" for="categoryId">ক্যাটাগরি *</label>
+                    <select class="field" id="categoryId" th:field="*{categoryId}" th:errorclass="invalid">
+                        <option value="">— নির্বাচন করুন —</option>
+                        <optgroup th:each="g : ${groups}" th:label="${g.label}">
+                            <option th:each="c : ${categories}" th:if="${c.groupType == g}" th:value="${c.id}"
+                                    th:text="${c.name} + (${c.nameEn} != null ? ' (' + ${c.nameEn} + ')' : '')"></option>
+                        </optgroup>
+                    </select>
+                    <small class="error-text" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></small></div>
+
+                <div class="fld"><label class="label" for="subCategoryId">উপ-ক্যাটাগরি</label>
+                    <select class="field" id="subCategoryId" th:field="*{subCategoryId}">
+                        <option value="">— নেই —</option>
+                        <option th:each="s : ${subCategories}" th:value="${s.id}" th:text="${s.name}" th:attr="data-cat=${s.category.id}"></option>
+                    </select></div>
+
+                <div th:replace="~{fragments/form :: input('কাকে টাকা দেওয়া হয়েছে','paidTo','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('রেফারেন্স নং / ট্রানজেকশন আইডি','referenceNo','text',null)}"></div>
+            </div>
+            <div th:replace="~{fragments/form :: input('বিবরণ','description','text',null)}"></div>
+
+            <div th:if="${!edit}">
+                <h2 class="mt mb">পেমেন্ট</h2>
+                <div class="grid cols-3">
+                    <div class="fld"><label class="label" for="status">অবস্থা *</label>
+                        <select class="field" id="status" th:field="*{status}">
+                            <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.label}"></option>
+                        </select></div>
+                    <div class="fld" id="methodBox"><label class="label" for="paymentMethod">পেমেন্ট পদ্ধতি</label>
+                        <select class="field" id="paymentMethod" th:field="*{paymentMethod}">
+                            <option th:each="m : ${payMethods}" th:value="${m.name()}" th:text="${m.label}"></option>
+                        </select></div>
+                    <div id="partialBox">
+                        <div th:replace="~{fragments/form :: input('এখন কত দিলেন (৳)','paidAmount','number','0.01')}"></div>
+                    </div>
+                </div>
+                <p class="muted small mb">"পরিশোধিত" = পুরো টাকা দেওয়া হয়েছে; "বকেয়া" = এখনো কিছু দেওয়া হয়নি; "আংশিক" = কিছু দেওয়া হয়েছে, বাকি পরে।</p>
+            </div>
+
+            <div class="row gap mt">
+                <button class="btn primary" type="submit">সংরক্ষণ করুন</button>
+                <a class="btn" th:href="${edit} ? @{/expenses/{id}(id=${expenseId})} : @{/expenses}">বাতিল</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        (function () {
+            var cat = document.getElementById('categoryId');
+            var sub = document.getElementById('subCategoryId');
+            function filterSubs() {
+                var c = cat.value;
+                Array.prototype.forEach.call(sub.options, function (o) {
+                    if (!o.value) return;
+                    var ok = o.getAttribute('data-cat') === c;
+                    o.hidden = !ok;
+                    o.disabled = !ok;
+                });
+                var cur = sub.options[sub.selectedIndex];
+                if (cur && cur.disabled) sub.value = '';
+            }
+            cat.addEventListener('change', filterSubs);
+            filterSubs();
+
+            var st = document.getElementById('status');
+            if (st) {
+                var partial = document.getElementById('partialBox');
+                var method = document.getElementById('methodBox');
+                var toggle = function () {
+                    partial.classList.toggle('hidden', st.value !== 'PARTIAL');
+                    method.classList.toggle('hidden', st.value === 'UNPAID');
+                };
+                st.addEventListener('change', toggle);
+                toggle();
+            }
+        })();
+    </script>
+</div>
+</body>
+</html>

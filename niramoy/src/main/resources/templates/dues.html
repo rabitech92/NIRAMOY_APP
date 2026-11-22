@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('বকেয়া ও পেমেন্ট', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1>বকেয়া ও পেমেন্ট</h1><p class="muted">গ্রাহক ও সরবরাহকারীর বকেয়ার সারাংশ</p></div></div>
+
+    <div class="grid cols-3 mb">
+        <div class="card pad"><p class="muted">গ্রাহক বকেয়া (প্রাপ্য)</p><h2 style="font-size:24px" th:text="${@fmt.money(receivable)}"></h2></div>
+        <div class="card pad"><p class="muted">সরবরাহকারী বকেয়া (দেনা)</p><h2 style="font-size:24px" th:text="${@fmt.money(supplierDue)}"></h2></div>
+        <div class="card pad"><p class="muted">আজ আদায়</p><h2 style="font-size:24px" th:text="${@fmt.money(collectedToday)}"></h2></div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">সরবরাহকারী পেমেন্ট</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>সরবরাহকারী</th><th class="right">বকেয়া</th><th>পেমেন্ট করুন</th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${suppliers}">
+                <td th:text="${s.name}"></td>
+                <td class="right" th:text="${@fmt.money(s.dueAmount)}"></td>
+                <td>
+                    <form class="inline-form" th:if="${s.dueAmount.signum() > 0}" th:action="@{/dues/suppliers/{id}/pay(id=${s.id})}" method="post">
+                        <input class="field" type="number" name="amount" min="0.01" step="0.01" th:max="${s.dueAmount}" placeholder="পরিমাণ" required>
+                        <select class="field" name="method"><option th:each="m : ${methods}" th:value="${m.name()}" th:text="${m.label}"></option></select>
+                        <button class="btn primary sm" type="submit">পরিশোধ</button>
+                    </form>
+                    <span class="badge good" th:if="${s.dueAmount.signum() == 0}">পরিশোধিত</span>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(suppliers)}"><td colspan="3" class="empty">কোনো সরবরাহকারী নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">গ্রাহকের বকেয়া ইনভয়েস</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ইনভয়েস</th><th>গ্রাহক</th><th>তারিখ</th><th class="right">বকেয়া</th><th>আদায়</th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${openDues}">
+                <td><a class="link" th:href="@{/sales/{id}(id=${s.id})}" th:text="${s.invoiceNo}"></a></td>
+                <td><span th:text="${s.customerName}"></span><br><small class="muted" th:text="${s.customerPhone}"></small></td>
+                <td th:text="${@fmt.date(s.createdAt.toLocalDate())}"></td>
+                <td class="right" th:text="${@fmt.money(s.dueAmount)}"></td>
+                <td>
+                    <form class="inline-form" th:action="@{/dues/sales/{id}/collect(id=${s.id})}" method="post">
+                        <input class="field" type="number" name="amount" min="0.01" step="0.01" th:max="${s.dueAmount}" placeholder="পরিমাণ" required>
+                        <select class="field" name="method"><option th:each="m : ${methods}" th:value="${m.name()}" th:text="${m.label}"></option></select>
+                        <button class="btn primary sm" type="submit">আদায়</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(openDues)}"><td colspan="5" class="empty">কোনো বকেয়া ইনভয়েস নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad">
+        <h2 class="mb">সাম্প্রতিক সরবরাহকারী পেমেন্ট</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>সময়</th><th>সরবরাহকারী</th><th class="right">পরিমাণ</th><th>পদ্ধতি</th><th>কে করেছেন</th></tr></thead>
+            <tbody>
+            <tr th:each="p : ${payments}">
+                <td th:text="${@fmt.dateTime(p.createdAt)}"></td><td th:text="${p.supplier.name}"></td>
+                <td class="right" th:text="${@fmt.money(p.amount)}"></td><td th:text="${p.method.label}"></td><td th:text="${p.paidBy}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(payments)}"><td colspan="5" class="empty">এখনো কোনো পেমেন্ট নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

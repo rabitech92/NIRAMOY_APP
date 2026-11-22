@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('খরচের তালিকা', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>খরচের তালিকা ও রিপোর্ট</h1><p class="muted">তারিখ, ক্যাটাগরি ও অবস্থা অনুযায়ী ফিল্টার করুন</p></div>
+        <div class="row gap wrap">
+            <a class="btn" th:href="@{/expenses}">← ড্যাশবোর্ড</a>
+            <a class="btn primary" th:href="@{/expenses/new}">+ নতুন খরচ</a>
+        </div>
+    </div>
+
+    <div class="card mb">
+        <form class="pad" method="get" th:action="@{/expenses/list}">
+            <div class="grid cols-4" style="align-items:end">
+                <div><label class="label" for="q">অনুসন্ধান</label>
+                    <input id="q" class="field" name="q" th:value="${q}" placeholder="নং, কাকে, রেফারেন্স বা বিবরণ"></div>
+                <div><label class="label" for="categoryId">ক্যাটাগরি</label>
+                    <select id="categoryId" class="field" name="categoryId">
+                        <option value="">সব ক্যাটাগরি</option>
+                        <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}" th:selected="${categoryId != null and categoryId == c.id}"></option>
+                    </select></div>
+                <div><label class="label" for="status">অবস্থা</label>
+                    <select id="status" class="field" name="status">
+                        <option value="">সব</option>
+                        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.label}" th:selected="${status == s.name()}"></option>
+                    </select></div>
+                <div><label class="label small row gap" style="margin-top:22px"><input type="checkbox" name="voided" value="true" th:checked="${voided}"> বাতিল খরচসহ</label></div>
+                <div><label class="label" for="from">শুরু</label><input id="from" class="field" type="date" name="from" th:value="${from}"></div>
+                <div><label class="label" for="to">শেষ</label><input id="to" class="field" type="date" name="to" th:value="${to}"></div>
+                <div><button class="btn primary" type="submit">ফিল্টার</button></div>
+            </div>
+            <div class="row gap wrap mt small">
+                <span class="muted">দ্রুত বাছাই:</span>
+                <a class="btn sm" th:href="@{/expenses/list(from=${today},to=${today})}">আজ</a>
+                <a class="btn sm" th:href="@{/expenses/list(from=${weekStart},to=${today})}">এই সপ্তাহ</a>
+                <a class="btn sm" th:href="@{/expenses/list(from=${monthStart},to=${today})}">এই মাস</a>
+                <a class="btn sm" th:href="@{/expenses/list(from=${yearStart},to=${today})}">এই বছর</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid cols-3 mb">
+        <div class="card stat"><div class="k" style="margin:0">মোট খরচ (ফিল্টার অনুযায়ী)</div><div class="v" th:text="${@fmt.money(result.totalAmount)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">পরিশোধিত</div><div class="v" th:text="${@fmt.money(result.totalPaid)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">বকেয়া</div><div class="v" th:text="${@fmt.money(result.totalAmount.subtract(result.totalPaid))}"></div></div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap"><table>
+            <thead><tr><th>তারিখ</th><th>নং</th><th>ক্যাটাগরি</th><th>কাকে</th><th class="right">পরিমাণ</th><th class="right">পরিশোধিত</th><th>অবস্থা</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="e : ${result.page.content}" th:style="${e.voided} ? 'opacity:.55'">
+                <td th:text="${@fmt.date(e.expenseDate)}"></td>
+                <td><b th:text="${e.expenseNo}"></b></td>
+                <td><span th:text="${e.category.name}"></span>
+                    <div class="small muted" th:if="${e.subCategory != null}" th:text="${e.subCategory.name}"></div></td>
+                <td th:text="${e.paidTo ?: '—'}"></td>
+                <td class="right" th:text="${@fmt.money(e.amount)}"></td>
+                <td class="right" th:text="${@fmt.money(e.paidAmount)}"></td>
+                <td><span class="badge bad" th:if="${e.voided}">বাতিল</span>
+                    <span class="badge" th:unless="${e.voided}" th:classappend="${e.status.name() == 'PAID'} ? 'good' : (${e.status.name() == 'PARTIAL'} ? 'warn' : 'bad')" th:text="${e.status.label}"></span></td>
+                <td><a class="link" th:href="@{/expenses/{id}(id=${e.id})}">বিস্তারিত →</a></td>
+            </tr>
+            <tr th:if="${result.page.empty}"><td colspan="8" class="empty">এই ফিল্টারে কোনো খরচ পাওয়া যায়নি।</td></tr>
+            </tbody>
+        </table></div>
+        <div class="pager" th:if="${result.page.totalPages > 0}">
+            <span th:text="'মোট ' + ${result.page.totalElements} + 'টি · পৃষ্ঠা ' + (${result.page.number} + 1) + '/' + ${result.page.totalPages}"></span>
+            <div class="row gap">
+                <a class="btn sm" th:classappend="${result.page.first} ? 'disabled'"
+                   th:href="@{/expenses/list(page=${result.page.number - 1}, q=${q}, categoryId=${categoryId}, status=${status}, from=${from}, to=${to}, voided=${voided})}">আগের</a>
+                <a class="btn sm" th:classappend="${result.page.last} ? 'disabled'"
+                   th:href="@{/expenses/list(page=${result.page.number + 1}, q=${q}, categoryId=${categoryId}, status=${status}, from=${from}, to=${to}, voided=${voided})}">পরের</a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

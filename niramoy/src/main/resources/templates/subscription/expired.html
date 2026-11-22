@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('সাবস্ক্রিপশনের মেয়াদ শেষ', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="card pad" style="max-width:620px;margin:40px auto;text-align:center">
+        <h1>সাবস্ক্রিপশনের মেয়াদ শেষ</h1>
+        <p class="muted mt" th:text="${st.message}"></p>
+        <p class="mt" th:if="${st.endDate != null}">মেয়াদ শেষ হয়েছে: <b th:text="${@fmt.date(st.endDate)}"></b></p>
+        <p class="mt">সফটওয়্যার আবার চালু করতে সাবস্ক্রিপশন নবায়ন করতে হবে।</p>
+
+        <div class="mt" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')">
+            <a class="btn primary" th:href="@{/subscription}">প্ল্যান বেছে নবায়ন করুন</a>
+            <p class="muted small mt" th:if="${st.pending}">আপনার নবায়নের অনুরোধ যাচাই অপেক্ষায় আছে।</p>
+        </div>
+        <p class="muted mt" sec:authorize="!hasAnyRole('SUPER_ADMIN','OWNER')">অনুগ্রহ করে দোকানের মালিকের সাথে যোগাযোগ করুন।</p>
+    </div>
+</div>
+</body>
+</html>

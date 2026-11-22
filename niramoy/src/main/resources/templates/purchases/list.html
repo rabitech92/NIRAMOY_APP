@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{fragments/layout :: layout('ক্রয় ও সরবরাহকারী', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>ক্রয় ও সরবরাহকারী</h1><p class="muted">ক্রয়, পণ্য গ্রহণ ও সরবরাহকারীর বকেয়া</p></div>
+        <div class="row gap">
+            <a class="btn" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')" th:href="@{/purchases/suppliers/new}">+ সরবরাহকারী</a>
+            <a class="btn primary" th:href="@{/purchases/orders/new}">+ নতুন ক্রয় তালিকা</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="tabs">
+            <a th:classappend="${tab == 'orders'} ? 'active'" th:href="@{/purchases(tab='orders')}">ক্রয় তালিকা</a>
+            <a th:classappend="${tab == 'suppliers'} ? 'active'" th:href="@{/purchases(tab='suppliers')}">সরবরাহকারী</a>
+            <a th:classappend="${tab == 'returns'} ? 'active'" th:href="@{/purchases(tab='returns')}">ক্রয় ফেরত</a>
+        </div>
+        <form class="toolbar" method="get" th:action="@{/purchases}">
+            <input type="hidden" name="tab" th:value="${tab}">
+            <div><label class="label" for="q">অনুসন্ধান</label>
+                <input id="q" class="field" name="q" th:value="${q}" placeholder="নাম বা আদেশ নম্বর"></div>
+            <div th:if="${tab == 'orders'}"><label class="label" for="filter">অবস্থা</label>
+                <select id="filter" class="field" name="filter">
+                    <option value="">সব</option>
+                    <option th:each="s : ${orderStatuses}" th:value="${s.name()}" th:text="${s.label}" th:selected="${filter == s.name()}"></option>
+                </select></div>
+            <div th:if="${tab == 'suppliers'}"><label class="label" for="filter2">অবস্থা</label>
+                <select id="filter2" class="field" name="filter">
+                    <option value="">সব</option>
+                    <option value="DUE" th:selected="${filter == 'DUE'}">বকেয়া</option>
+                    <option value="PAID" th:selected="${filter == 'PAID'}">পরিশোধিত</option>
+                </select></div>
+            <div th:if="${tab == 'returns'}"></div>
+            <button class="btn primary" type="submit">খুঁজুন</button>
+        </form>
+
+        <div class="table-wrap" th:if="${tab == 'orders'}"><table>
+            <thead><tr><th>তালিকা</th><th>সরবরাহকারী / এমপিও</th><th>শাখা</th><th>আইটেম</th><th class="right">গ্রহণকৃত মূল্য</th><th>অবস্থা</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="o : ${page.content}">
+                <td><b th:text="${o.orderNo}"></b></td>
+                <td><span th:text="${o.supplier.name}"></span><br><small class="muted" th:text="${o.mpoName ?: '—'}"></small></td>
+                <td th:text="${o.branch.name}"></td>
+                <td>
+                    <span th:if="${o.totalItems == 0}" class="muted small" th:text="${o.itemsSummary}"></span>
+                    <div class="row gap wrap" th:if="${o.totalItems > 0}">
+                        <span class="badge soft" th:text="'মোট ' + ${o.totalItems}"></span>
+                        <span class="badge good" th:if="${o.orderedCount + o.receivedCount > 0}" th:text="'অর্ডার সম্পন্ন ' + (${o.orderedCount} + ${o.receivedCount})"></span>
+                        <span class="badge bad" th:if="${o.notOrderedCount > 0}" th:text="'অর্ডার হয়নি ' + ${o.notOrderedCount}"></span>
+                        <span class="badge bad" th:if="${o.urgentOpenCount > 0}" th:text="'জরুরি ' + ${o.urgentOpenCount}"></span>
+                    </div>
+                </td>
+                <td class="right" th:text="${@fmt.money(o.amount)}"></td>
+                <td><span class="badge" th:classappend="${o.status.name() == 'RECEIVED'} ? 'good' : 'warn'" th:text="${o.status.label}"></span></td>
+                <td><a class="link" th:href="@{/purchases/orders/{id}(id=${o.id})}">বিস্তারিত →</a></td>
+            </tr>
+            <tr th:if="${page.empty}"><td colspan="7" class="empty">কোনো ক্রয় তালিকা নেই।</td></tr>
+            </tbody>
+        </table></div>
+
+        <div class="table-wrap" th:if="${tab == 'suppliers'}"><table>
+            <thead><tr><th>সরবরাহকারী</th><th>ফোন</th><th class="right">বকেয়া</th><th>অবস্থা</th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${page.content}">
+                <td><b th:text="${s.name}"></b></td><td th:text="${s.phone}"></td>
+                <td class="right" th:text="${@fmt.money(s.dueAmount)}"></td>
+                <td><span class="badge" th:classappend="${s.dueAmount.signum() > 0} ? 'warn' : 'good'" th:text="${s.dueAmount.signum() > 0} ? 'বকেয়া' : 'পরিশোধিত'"></span></td>
+            </tr>
+            <tr th:if="${page.empty}"><td colspan="4" class="empty">কোনো সরবরাহকারী নেই।</td></tr>
+            </tbody>
+        </table></div>
+
+        <div class="table-wrap" th:if="${tab == 'returns'}"><table>
+            <thead><tr><th>আদেশ</th><th>সময়</th><th class="right">পরিমাণ</th><th>কারণ</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${page.content}">
+                <td th:text="${r.order.orderNo}"></td><td th:text="${@fmt.dateTime(r.createdAt)}"></td>
+                <td class="right" th:text="${@fmt.money(r.amount)}"></td><td th:text="${r.reason}"></td>
+            </tr>
+            <tr th:if="${page.empty}"><td colspan="4" class="empty">কোনো ক্রয় ফেরত নেই।</td></tr>
+            </tbody>
+        </table></div>
+        <div th:replace="~{fragments/form :: pager(${page}, '/purchases')}"></div>
+    </div>
+</div>
+</body>
+</html>

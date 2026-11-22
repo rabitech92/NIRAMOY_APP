@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('ওষুধের বিবরণ', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><p class="muted small">ওষুধের বিবরণ</p><h1><span th:text="${m.name}">নাম</span>
+            <span class="badge warn" th:if="${@marks.isMarked(m.name)}" style="vertical-align:middle">⭐ বেশি বিক্রিত</span></h1></div>
+        <a class="btn" th:href="@{/inventory}">← তালিকায় ফিরুন</a>
+    </div>
+    <div class="grid cols-2">
+        <div class="card pad">
+            <div class="mb">
+                <span class="badge bad" th:if="${m.expired}">মেয়াদোত্তীর্ণ</span>
+                <span class="badge warn" th:if="${!m.expired and m.expiringSoon}">মেয়াদ ঘনিয়ে এসেছে</span>
+                <span class="badge warn" th:if="${m.lowStock}">কম স্টক</span>
+                <span class="badge good" th:if="${!m.expired and !m.expiringSoon and !m.lowStock}">পর্যাপ্ত</span>
+            </div>
+            <div class="kv">
+                <div><span>ক্যাটাগরি</span><b th:text="${m.category ?: '—'}"></b></div>
+                <div><span>জেনেরিক নাম</span><b th:text="${m.genericName ?: '—'}"></b></div>
+                <div><span>কোম্পানি</span><b th:text="${m.companyName ?: '—'}"></b></div>
+                <div><span>বারকোড</span><b th:text="${m.barcode}"></b></div>
+                <div><span>শাখা</span><b th:text="${m.branch.name}"></b></div>
+                <div><span>ব্যাচ</span><b th:text="${m.batchNo}"></b></div>
+                <div><span>মেয়াদ</span><b th:text="${@fmt.date(m.expiryDate)}"></b></div>
+                <div><span>বক্স / তাক</span><b th:text="${m.boxNo ?: '—'}"></b></div>
+                <div><span>স্টক</span><b th:text="${@fmt.stock(m.stock, m.stripSize)} + ' (মোট ' + ${m.stock} + ' পিস)'"></b></div>
+                <div><span>এক পাতায় পিস</span><b th:text="${m.stripSize}"></b></div>
+                <div><span>পিস ক্রয়মূল্য</span><b th:text="${@fmt.money(m.costPrice)}"></b></div>
+                <div><span>পিস বিক্রয়মূল্য</span><b th:text="${@fmt.money(m.salePrice)}"></b></div>
+                <div><span>পাতা বিক্রয়মূল্য</span><b th:text="${@fmt.money(m.effectiveStripPrice)}"></b></div>
+                <div><span>পুনঃঅর্ডার সীমা</span><b th:text="${m.reorderLevel}"></b></div>
+            </div>
+        </div>
+
+        <div class="card pad" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')">
+            <h2 class="mb">স্টক সমন্বয়</h2>
+            <form th:action="@{/inventory/{id}/adjust(id=${m.id})}" th:object="${adjustForm}" method="post" novalidate>
+                <div th:replace="~{fragments/form :: input('স্টক পরিবর্তন — পিস হিসেবে (+ বা −)','delta','number','1')}"></div>
+                <div th:replace="~{fragments/form :: input('সমন্বয়ের কারণ','reason','text',null)}"></div>
+                <button class="btn primary" type="submit">সমন্বয় করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card pad mt">
+        <h2 class="mb">সাম্প্রতিক স্টক সমন্বয়</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>সময়</th><th>পরিবর্তন</th><th>সমন্বয়ের পর স্টক</th><th>কারণ</th><th>কে করেছেন</th></tr></thead>
+            <tbody>
+            <tr th:each="a : ${adjustments}">
+                <td th:text="${@fmt.dateTime(a.createdAt)}"></td>
+                <td th:text="${a.delta > 0 ? '+' + a.delta : a.delta}"></td>
+                <td th:text="${a.stockAfter}"></td><td th:text="${a.reason}"></td><td th:text="${a.performedBy}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(adjustments)}"><td colspan="5" class="empty">কোনো সমন্বয় নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('খরচের ক্যাটাগরি', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>খরচের ক্যাটাগরি</h1><p class="muted">ক্যাটাগরি ও উপ-ক্যাটাগরি যোগ বা বন্ধ করুন (বন্ধ করলে নতুন খরচে দেখাবে না, পুরনো খরচ ঠিক থাকবে)</p></div>
+        <a class="btn" th:href="@{/expenses}">← ড্যাশবোর্ড</a>
+    </div>
+
+    <div class="grid cols-2 mb">
+        <div class="card pad">
+            <h2 class="mb">নতুন ক্যাটাগরি</h2>
+            <form th:action="@{/expenses/categories}" method="post">
+                <div class="fld"><label class="label" for="cname">নাম (বাংলা) *</label>
+                    <input class="field" id="cname" name="name" maxlength="100" required></div>
+                <div class="fld"><label class="label" for="cnameEn">নাম (ইংরেজি)</label>
+                    <input class="field" id="cnameEn" name="nameEn" maxlength="100"></div>
+                <div class="fld"><label class="label" for="cgroup">গ্রুপ *</label>
+                    <select class="field" id="cgroup" name="groupType">
+                        <option th:each="g : ${groups}" th:value="${g.name()}" th:text="${g.label}"></option>
+                    </select></div>
+                <button class="btn primary" type="submit">যোগ করুন</button>
+            </form>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">নতুন উপ-ক্যাটাগরি</h2>
+            <form th:action="@{/expenses/categories/sub}" method="post">
+                <div class="fld"><label class="label" for="scat">ক্যাটাগরি *</label>
+                    <select class="field" id="scat" name="categoryId" required>
+                        <option value="">— নির্বাচন করুন —</option>
+                        <option th:each="c : ${categories}" th:if="${c.active}" th:value="${c.id}" th:text="${c.name}"></option>
+                    </select></div>
+                <div class="fld"><label class="label" for="sname">উপ-ক্যাটাগরির নাম *</label>
+                    <input class="field" id="sname" name="name" maxlength="100" required placeholder="যেমন: গ্রীষ্মকালীন বিদ্যুৎ বিল"></div>
+                <button class="btn primary" type="submit">যোগ করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card pad mb" th:each="g : ${groups}">
+        <h2 class="mb" th:text="${g.label}"></h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ক্যাটাগরি</th><th>উপ-ক্যাটাগরি</th><th>অবস্থা</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="c : ${categories}" th:if="${c.groupType == g}">
+                <td><b th:text="${c.name}"></b><div class="small muted" th:text="${c.nameEn ?: ''}"></div></td>
+                <td>
+                    <span th:each="s : ${subCategories}" th:if="${s.category.id == c.id}" style="display:inline-flex;gap:4px;align-items:center;margin:2px 8px 2px 0">
+                        <span class="badge" th:classappend="${s.active} ? 'soft' : 'bad'" th:text="${s.name}"></span>
+                        <form th:action="@{/expenses/categories/sub/{id}/toggle(id=${s.id})}" method="post" style="display:inline">
+                            <button class="btn sm" type="submit" th:text="${s.active} ? '✕' : '↺'" th:title="${s.active} ? 'বন্ধ করুন' : 'চালু করুন'"></button></form>
+                    </span>
+                </td>
+                <td><span class="badge" th:classappend="${c.active} ? 'good' : 'bad'" th:text="${c.active} ? 'চালু' : 'বন্ধ'"></span></td>
+                <td><form th:action="@{/expenses/categories/{id}/toggle(id=${c.id})}" method="post">
+                    <button class="btn sm" type="submit" th:text="${c.active} ? 'বন্ধ করুন' : 'চালু করুন'"></button></form></td>
+            </tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

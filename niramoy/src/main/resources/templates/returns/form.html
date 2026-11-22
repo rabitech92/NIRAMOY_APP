@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('বিক্রয় ফেরত', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1 th:text="${sale.invoiceNo} + ' — ফেরত'">ফেরত</h1>
+        <p class="muted">যাচাইয়ের পর রিফান্ড ও স্টক পুনরুদ্ধার</p></div>
+        <a class="btn" th:href="@{/returns}">← ফিরুন</a></div>
+    <div class="grid cols-2">
+        <div class="card pad">
+            <h2 class="mb">ইনভয়েসের পণ্য</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>ওষুধ</th><th class="right">পরিমাণ</th><th class="right">মোট</th></tr></thead>
+                <tbody>
+                <tr th:each="i : ${sale.items}"><td th:text="${i.medicineName}"></td>
+                    <td class="right" th:text="${i.quantity} + ' ' + ${i.unitLabel ?: 'পিস'}"></td><td class="right" th:text="${@fmt.money(i.lineTotal)}"></td></tr>
+                </tbody>
+            </table></div>
+            <p class="right bold mt" th:text="'মোট ' + ${@fmt.money(sale.total)}"></p>
+        </div>
+        <div class="card pad">
+            <form th:action="@{/returns/{id}(id=${sale.id})}" th:object="${form}" method="post" novalidate>
+                <div th:replace="~{fragments/form :: input('ফেরতের কারণ','reason','text',null)}"></div>
+                <div class="fld"><label class="label" for="method">রিফান্ড পদ্ধতি</label>
+                    <select class="field" id="method" th:field="*{method}">
+                        <option th:each="p : ${paymentMethods}" th:if="${p.name() != 'CREDIT'}" th:value="${p.name()}" th:text="${p.label}"></option>
+                    </select></div>
+                <label class="row gap small mb"><input type="checkbox" th:field="*{restoreStock}"> যাচাইয়ের পর স্টক পুনরুদ্ধার করুন</label>
+                <button class="btn danger" type="submit">ফেরত সম্পন্ন করুন</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

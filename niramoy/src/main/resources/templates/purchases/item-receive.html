@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('পণ্য গ্রহণ', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><p class="muted small" th:text="${o.orderNo} + ' · ' + ${o.supplier.name}"></p>
+            <h1>পণ্য গ্রহণ — <span th:text="${item.brandName}"></span></h1>
+            <p class="muted">সরবরাহকারীর কাছ থেকে পণ্য এসেছে; ব্যাচের তথ্য দিয়ে স্টকে যোগ করুন।</p></div>
+        <a class="btn" th:href="@{/purchases/orders/{id}(id=${o.id})}">← ফিরুন</a>
+    </div>
+
+    <div class="card pad mb">
+        <div class="kv">
+            <div><span>ব্র্যান্ড নাম</span><b th:text="${item.brandName}"></b></div>
+            <div><span>জেনেরিক নাম</span><b th:text="${item.genericName ?: '—'}"></b></div>
+            <div><span>কোম্পানি</span><b th:text="${item.companyName ?: '—'}"></b></div>
+            <div><span>অর্ডারকৃত পরিমাণ</span><b th:text="${item.quantity} + ' ' + ${item.unit}"></b></div>
+        </div>
+    </div>
+
+    <div class="card pad">
+        <form th:action="@{/purchases/orders/{id}/items/{iid}/receive(id=${o.id},iid=${item.id})}" th:object="${receiveForm}" method="post" novalidate>
+            <div class="grid cols-3">
+                <div th:replace="~{fragments/form :: input('ওষুধের নাম (ব্র্যান্ড)','name','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('জেনেরিক নাম','genericName','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('কোম্পানির নাম','companyName','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('ক্যাটাগরি','category','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('বারকোড','barcode','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('নতুন ব্যাচ / লট','batchNo','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('মেয়াদ','expiryDate','date',null)}"></div>
+                <div th:replace="~{fragments/form :: input('বক্স / তাক নম্বর','boxNo','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('এক পাতায় কত পিস','stripSize','number','1')}"></div>
+                <div th:replace="~{fragments/form :: input('প্রাপ্ত পাতা','quantityStrips','number','1')}"></div>
+                <div th:replace="~{fragments/form :: input('প্রাপ্ত খুচরা পিস','quantityPieces','number','1')}"></div>
+                <div th:replace="~{fragments/form :: input('পিস ক্রয়মূল্য (৳)','costPrice','number','0.01')}"></div>
+                <div th:replace="~{fragments/form :: input('পিস বিক্রয়মূল্য (৳)','salePrice','number','0.01')}"></div>
+                <div th:replace="~{fragments/form :: input('পাতা বিক্রয়মূল্য (৳, ঐচ্ছিক)','stripPrice','number','0.01')}"></div>
+                <div th:replace="~{fragments/form :: input('পুনঃঅর্ডার সীমা (পিস)','reorderLevel','number','1')}"></div>
+            </div>
+            <div class="row gap mt">
+                <button class="btn primary" type="submit">স্টকে যোগ করুন</button>
+                <a class="btn" th:href="@{/purchases/orders/{id}(id=${o.id})}">বাতিল</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

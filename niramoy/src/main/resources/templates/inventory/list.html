@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('ওষুধ ও ইনভেন্টরি', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>ওষুধ ও ইনভেন্টরি</h1><p class="muted">ব্যাচ, মেয়াদ ও FEFO অনুযায়ী স্টক পর্যবেক্ষণ</p></div>
+        <a class="btn primary" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')"
+           th:href="@{/inventory/new}">+ ওষুধ যোগ করুন</a>
+    </div>
+
+    <div class="card">
+        <form class="toolbar" method="get" th:action="@{/inventory}">
+            <div><label class="label" for="q">অনুসন্ধান</label>
+                <input id="q" class="field" name="q" th:value="${q}" placeholder="নাম, জেনেরিক, কোম্পানি, বারকোড, ব্যাচ বা বক্স"></div>
+            <div><label class="label" for="filter">অবস্থা</label>
+                <select id="filter" class="field" name="filter">
+                    <option value="ALL" th:selected="${filter == 'ALL'}">সব</option>
+                    <option value="LOW" th:selected="${filter == 'LOW'}">কম স্টক</option>
+                    <option value="OK" th:selected="${filter == 'OK'}">পর্যাপ্ত</option>
+                    <option value="EXPIRING" th:selected="${filter == 'EXPIRING'}">মেয়াদ ঘনিয়ে এসেছে</option>
+                    <option value="EXPIRED" th:selected="${filter == 'EXPIRED'}">মেয়াদোত্তীর্ণ</option>
+                </select></div>
+            <button class="btn primary" type="submit">খুঁজুন</button>
+        </form>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ওষুধ</th><th>ব্যাচ / মেয়াদ</th><th>বক্স</th><th>স্টক</th><th>দাম (পিস / পাতা)</th><th>শাখা</th><th>অবস্থা</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="m : ${page.content}">
+                <td><b th:text="${m.name}"></b>
+                    <span class="badge warn" th:if="${@marks.isMarked(m.name)}">⭐ বেশি বিক্রিত</span>
+                    <div class="small" th:if="${m.genericName}" th:text="${m.genericName}"></div>
+                    <small class="muted" th:text="${(m.companyName != null ? m.companyName + ' · ' : '') + m.barcode}"></small></td>
+                <td><span th:text="${m.batchNo}"></span><br><small class="muted" th:text="${@fmt.date(m.expiryDate)}"></small></td>
+                <td><span class="badge soft" th:text="${m.boxNo ?: '—'}"></span></td>
+                <td th:text="${@fmt.stock(m.stock, m.stripSize)}"></td>
+                <td><div th:text="${@fmt.money(m.salePrice)} + ' / পিস'"></div>
+                    <div class="muted small" th:if="${m.stripSize > 1}" th:text="${@fmt.money(m.effectiveStripPrice)} + ' / পাতা'"></div></td>
+                <td th:text="${m.branch.name}"></td>
+                <td>
+                    <span class="badge bad" th:if="${m.expired}">মেয়াদোত্তীর্ণ</span>
+                    <span class="badge warn" th:if="${!m.expired and m.expiringSoon}">মেয়াদ ঘনিয়ে এসেছে</span>
+                    <span class="badge warn" th:if="${!m.expired and m.lowStock}">কম স্টক</span>
+                    <span class="badge good" th:if="${!m.expired and !m.expiringSoon and !m.lowStock}">পর্যাপ্ত</span>
+                </td>
+                <td><a class="link" th:href="@{/inventory/{id}(id=${m.id})}">বিস্তারিত →</a></td>
+            </tr>
+            <tr th:if="${page.empty}"><td colspan="8" class="empty">কোনো তথ্য পাওয়া যায়নি। অনুসন্ধান বা ফিল্টার পরিবর্তন করুন।</td></tr>
+            </tbody>
+        </table></div>
+        <div th:replace="~{fragments/form :: pager(${page}, '/inventory')}"></div>
+    </div>
+    <p class="muted small mt">FEFO: আগে মেয়াদ শেষ হবে এমন ব্যাচ তালিকার ওপরে দেখানো হয় এবং POS-এও আগে দেখায়।</p>
+</div>
+</body>
+</html>

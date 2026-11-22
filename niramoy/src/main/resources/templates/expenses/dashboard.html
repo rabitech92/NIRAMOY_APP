@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('খরচ ব্যবস্থাপনা', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>খরচ ব্যবস্থাপনা</h1><p class="muted">দোকানের সব খরচের হিসাব (বর্তমান শাখা অনুযায়ী)</p></div>
+        <div class="row gap wrap">
+            <a class="btn" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')" th:href="@{/expenses/categories}">ক্যাটাগরি</a>
+            <a class="btn" th:href="@{/expenses/list}">খরচের তালিকা</a>
+            <a class="btn primary" th:href="@{/expenses/new}">+ নতুন খরচ</a>
+        </div>
+    </div>
+
+    <div class="grid cols-4 mb">
+        <div class="card stat"><div class="k" style="margin:0">আজকের খরচ</div><div class="v" th:text="${@fmt.money(d.today)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0" th:text="'এই মাস (' + ${d.monthLabel} + ')'">এই মাস</div><div class="v" th:text="${@fmt.money(d.month)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">বকেয়া খরচ (পরিশোধ বাকি)</div><div class="v" th:text="${@fmt.money(d.pending)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0" th:text="'এই বছর (' + ${d.yearNumber} + ')'">এই বছর</div><div class="v" th:text="${@fmt.money(d.year)}"></div></div>
+    </div>
+
+    <div class="grid cols-2 mb">
+        <div class="card pad">
+            <h2 class="mb">এই মাসের খরচ — ক্যাটাগরি অনুযায়ী</h2>
+            <p class="muted small" th:if="${#lists.isEmpty(d.byCategory)}">এই মাসে কোনো খরচ নেই।</p>
+            <div class="mb small" th:each="s : ${d.byCategory}">
+                <div class="row between"><span th:text="${s.label}"></span>
+                    <b th:text="${@fmt.money(s.amount)} + ' · ' + ${s.percent} + '%'"></b></div>
+                <div class="bar"><div th:style="'width:' + ${s.percent} + '%'"></div></div>
+            </div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">এই মাসের পেমেন্ট — পদ্ধতি অনুযায়ী</h2>
+            <p class="muted small" th:if="${#lists.isEmpty(d.byPayment)}">এই মাসে কোনো পেমেন্ট নেই।</p>
+            <div class="mb small" th:each="s : ${d.byPayment}">
+                <div class="row between"><span th:text="${s.label}"></span>
+                    <b th:text="${@fmt.money(s.amount)} + ' · ' + ${s.percent} + '%'"></b></div>
+                <div class="bar"><div th:style="'width:' + ${s.percent} + '%'"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card pad">
+        <div class="row between mb"><h2>সাম্প্রতিক খরচ</h2><a class="link" th:href="@{/expenses/list}">সব দেখুন →</a></div>
+        <div class="table-wrap"><table>
+            <thead><tr><th>নং</th><th>তারিখ</th><th>ক্যাটাগরি</th><th>কাকে</th><th class="right">পরিমাণ</th><th>অবস্থা</th></tr></thead>
+            <tbody>
+            <tr th:each="e : ${d.recent}">
+                <td><a class="link" th:href="@{/expenses/{id}(id=${e.id})}" th:text="${e.expenseNo}"></a></td>
+                <td th:text="${@fmt.date(e.expenseDate)}"></td>
+                <td th:text="${e.category.name}"></td>
+                <td th:text="${e.paidTo ?: '—'}"></td>
+                <td class="right" th:text="${@fmt.money(e.amount)}"></td>
+                <td><span class="badge" th:classappend="${e.status.name() == 'PAID'} ? 'good' : (${e.status.name() == 'PARTIAL'} ? 'warn' : 'bad')" th:text="${e.status.label}"></span></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(d.recent)}"><td colspan="6" class="empty">এখনো কোনো খরচ নথিভুক্ত হয়নি।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

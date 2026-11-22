@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('ইনভয়েস', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>ইনভয়েস তালিকা</h1><p class="muted">সব বিক্রয়ের ইতিহাস</p></div>
+        <a class="btn primary" th:href="@{/pos}">+ নতুন বিক্রয়</a>
+    </div>
+    <div class="card">
+        <form class="toolbar" method="get" th:action="@{/sales}">
+            <div><label class="label" for="q">অনুসন্ধান</label>
+                <input id="q" class="field" name="q" th:value="${q}" placeholder="ইনভয়েস নম্বর বা গ্রাহকের নাম"></div>
+            <div><label class="label" for="filter">অবস্থা</label>
+                <select id="filter" class="field" name="filter">
+                    <option value="">সব</option>
+                    <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.label}" th:selected="${filter == s.name()}"></option>
+                </select></div>
+            <button class="btn primary" type="submit">খুঁজুন</button>
+        </form>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ইনভয়েস</th><th>সময়</th><th>শাখা</th><th>পেমেন্ট</th><th class="right">মোট</th><th>অবস্থা</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${page.content}">
+                <td><b th:text="${s.invoiceNo}"></b></td>
+                <td th:text="${@fmt.dateTime(s.createdAt)}"></td>
+                <td th:text="${s.branch.name}"></td>
+                <td th:text="${s.paymentMethod.label}"></td>
+                <td class="right" th:text="${@fmt.money(s.total)}"></td>
+                <td><span class="badge" th:classappend="${s.status.name() == 'COMPLETED'} ? 'good' : 'warn'" th:text="${s.status.label}"></span>
+                    <span class="badge bad" th:if="${s.dueAmount.signum() > 0}" th:text="'বকেয়া ' + ${@fmt.money(s.dueAmount)}"></span></td>
+                <td><a class="link" th:href="@{/sales/{id}(id=${s.id})}">দেখুন →</a></td>
+            </tr>
+            <tr th:if="${page.empty}"><td colspan="7" class="empty">কোনো ইনভয়েস পাওয়া যায়নি।</td></tr>
+            </tbody>
+        </table></div>
+        <div th:replace="~{fragments/form :: pager(${page}, '/sales')}"></div>
+    </div>
+</div>
+</body>
+</html>

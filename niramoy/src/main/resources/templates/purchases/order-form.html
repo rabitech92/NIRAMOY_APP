@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('নতুন ক্রয় তালিকা', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>নতুন ক্রয় তালিকা</h1>
+            <p class="muted">যে ওষুধ ফার্মেসিতে নেই তার তালিকা বানান। এমপিওকে দেখান; তিনি যেগুলোর অর্ডার নেবেন সেগুলো পরে "অর্ডার সম্পন্ন" হবে, বাকিগুলো "অর্ডার হয়নি" থাকবে।</p></div>
+    </div>
+
+    <div class="card pad">
+        <form th:action="@{/purchases/orders}" th:object="${form}" method="post" novalidate>
+            <div class="grid cols-2" style="max-width:820px">
+                <div class="fld"><label class="label" for="supplierId">সরবরাহকারী *</label>
+                    <select class="field" id="supplierId" th:field="*{supplierId}" th:errorclass="invalid">
+                        <option value="">— নির্বাচন করুন —</option>
+                        <option th:each="s : ${suppliers}" th:value="${s.id}" th:text="${s.name}"></option>
+                    </select>
+                    <small class="error-text" th:if="${#fields.hasErrors('supplierId')}" th:errors="*{supplierId}"></small></div>
+                <div th:replace="~{fragments/form :: input('এমপিও (MPO)-এর নাম','mpoName','text',null)}"></div>
+            </div>
+
+            <h2 class="mt mb">ওষুধের তালিকা</h2>
+            <div class="item-head">
+                <span>ব্র্যান্ড নাম *</span><span>জেনেরিক নাম</span><span>কোম্পানির নাম</span>
+                <span>পরিমাণ *</span><span>একক</span><span>অবস্থা</span><span></span>
+            </div>
+            <div id="itemRows">
+                <div class="item-row" th:each="row, st : *{items}">
+                    <input class="field" th:field="*{items[__${st.index}__].brandName}" placeholder="যেমন: Napa Extra" aria-label="ব্র্যান্ড নাম">
+                    <input class="field" th:field="*{items[__${st.index}__].genericName}" placeholder="যেমন: Paracetamol" aria-label="জেনেরিক নাম">
+                    <input class="field" th:field="*{items[__${st.index}__].companyName}" placeholder="যেমন: Beximco" aria-label="কোম্পানির নাম">
+                    <input class="field" type="number" min="1" step="1" th:field="*{items[__${st.index}__].quantity}" placeholder="০" aria-label="পরিমাণ">
+                    <select class="field" th:field="*{items[__${st.index}__].unit}" aria-label="একক">
+                        <option th:each="u : ${units}" th:value="${u}" th:text="${u}"></option>
+                    </select>
+                    <select class="field" th:field="*{items[__${st.index}__].priority}" aria-label="জরুরি কি না">
+                        <option th:each="p : ${priorities}" th:value="${p.name()}" th:text="${p.label}"></option>
+                    </select>
+                    <button type="button" class="btn sm danger" data-remove aria-label="সারি মুছুন">✕</button>
+                </div>
+            </div>
+            <button type="button" class="btn mt" id="addRow">+ আরও ওষুধ যোগ করুন</button>
+
+            <div class="row gap mt">
+                <button class="btn primary" type="submit">তালিকা তৈরি করুন</button>
+                <a class="btn" th:href="@{/purchases}">বাতিল</a>
+            </div>
+        </form>
+
+        <template id="rowTpl">
+            <div class="item-row">
+                <input class="field" name="items[#IDX#].brandName" placeholder="যেমন: Napa Extra" aria-label="ব্র্যান্ড নাম">
+                <input class="field" name="items[#IDX#].genericName" placeholder="যেমন: Paracetamol" aria-label="জেনেরিক নাম">
+                <input class="field" name="items[#IDX#].companyName" placeholder="যেমন: Beximco" aria-label="কোম্পানির নাম">
+                <input class="field" type="number" min="1" step="1" name="items[#IDX#].quantity" placeholder="০" aria-label="পরিমাণ">
+                <select class="field" name="items[#IDX#].unit" aria-label="একক">
+                    <option th:each="u : ${units}" th:value="${u}" th:text="${u}"></option>
+                </select>
+                <select class="field" name="items[#IDX#].priority" aria-label="জরুরি কি না">
+                    <option th:each="p : ${priorities}" th:value="${p.name()}" th:text="${p.label}"></option>
+                </select>
+                <button type="button" class="btn sm danger" data-remove aria-label="সারি মুছুন">✕</button>
+            </div>
+        </template>
+    </div>
+
+    <script>
+        (function () {
+            const rows = document.getElementById('itemRows');
+            const tpl = document.getElementById('rowTpl');
+            let idx = rows.children.length;
+
+            function bind(row) {
+                row.querySelector('[data-remove]').addEventListener('click', () => {
+                    if (rows.children.length > 1) row.remove();
+                    else row.querySelectorAll('input').forEach(i => { i.value = ''; });
+                });
+            }
+            rows.querySelectorAll('.item-row').forEach(bind);
+
+            document.getElementById('addRow').addEventListener('click', () => {
+                const holder = document.createElement('div');
+                holder.innerHTML = tpl.innerHTML.split('#IDX#').join(String(idx++));
+                const row = holder.firstElementChild;
+                rows.appendChild(row);
+                bind(row);
+                row.querySelector('input').focus();
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

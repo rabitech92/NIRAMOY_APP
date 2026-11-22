@@ -1,0 +1,14 @@
+When you add csv file to the table Medicine
+take this quire and keep this file to this location medicines.csv please take this location
+---------------------------------
+USE niramoy;
+
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/medicines.csv'
+INTO TABLE medicines
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 LINES
+(name, category, generic_name, company_name, barcode, batch_no,
+ expiry_date, cost_price, sale_price, stock, reorder_level,
+ strip_size, box_no, @strip_price, branch_id)
+SET strip_price = NULLIF(TRIM(@strip_price), '');

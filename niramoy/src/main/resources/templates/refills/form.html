@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('নতুন রিফিল সাবস্ক্রিপশন', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>নতুন নিয়মিত ওষুধ সাবস্ক্রিপশন</h1>
+            <p class="muted">গ্রাহক নির্দিষ্ট দিন পরপর যে ওষুধ নেবেন তা লিখুন। সময় হলে রিমাইন্ডার আসবে এবং এক ক্লিকে বিল করা যাবে।</p></div>
+    </div>
+
+    <div class="card pad">
+        <form th:action="@{/refills}" th:object="${form}" method="post" novalidate>
+            <div class="grid cols-3" style="max-width:1000px">
+                <div th:replace="~{fragments/form :: input('গ্রাহকের নাম *','customerName','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('মোবাইল নম্বর *','customerPhone','tel',null)}"></div>
+                <div th:replace="~{fragments/form :: input('প্ল্যানের নাম (যেমন: ডায়াবেটিস মাসিক)','planName','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('কত দিন পরপর রিফিল *','frequencyDays','number','1')}"></div>
+                <div th:replace="~{fragments/form :: input('প্রথম রিফিলের তারিখ','startDate','date',null)}"></div>
+                <div th:replace="~{fragments/form :: input('নিয়মিত গ্রাহক ছাড় (%)','discountPercent','number','0.01')}"></div>
+            </div>
+            <div style="max-width:1000px" th:replace="~{fragments/form :: input('নোট (ঐচ্ছিক)','note','text',null)}"></div>
+
+            <h2 class="mt mb">নিয়মিত ওষুধের তালিকা</h2>
+            <p class="muted small mb">ওষুধের নাম ইনভেন্টরির নামের সাথে মিললে বিল করার সময় স্বয়ংক্রিয়ভাবে সেই ওষুধ (আগে মেয়াদ শেষ হবে এমন ব্যাচ) নেওয়া হয়।</p>
+            <div class="refill-head"><span>ওষুধের নাম *</span><span>পরিমাণ *</span><span>একক</span><span></span></div>
+            <div id="itemRows">
+                <div class="refill-row" th:each="row, st : *{items}">
+                    <input class="field" th:field="*{items[__${st.index}__].medicineName}" placeholder="যেমন: Napa 500" aria-label="ওষুধের নাম">
+                    <input class="field" type="number" min="1" step="1" th:field="*{items[__${st.index}__].quantity}" placeholder="০" aria-label="পরিমাণ">
+                    <select class="field" th:field="*{items[__${st.index}__].unit}" aria-label="একক">
+                        <option th:each="u : ${units}" th:value="${u}" th:text="${u}"></option>
+                    </select>
+                    <button type="button" class="btn sm danger" data-remove aria-label="সারি মুছুন">✕</button>
+                </div>
+            </div>
+            <button type="button" class="btn mt" id="addRow">+ আরও ওষুধ যোগ করুন</button>
+
+            <div class="row gap mt">
+                <button class="btn primary" type="submit">সাবস্ক্রিপশন তৈরি করুন</button>
+                <a class="btn" th:href="@{/refills}">বাতিল</a>
+            </div>
+        </form>
+
+        <template id="rowTpl">
+            <div class="refill-row">
+                <input class="field" name="items[#IDX#].medicineName" placeholder="যেমন: Napa 500" aria-label="ওষুধের নাম">
+                <input class="field" type="number" min="1" step="1" name="items[#IDX#].quantity" placeholder="০" aria-label="পরিমাণ">
+                <select class="field" name="items[#IDX#].unit" aria-label="একক">
+                    <option th:each="u : ${units}" th:value="${u}" th:text="${u}"></option>
+                </select>
+                <button type="button" class="btn sm danger" data-remove aria-label="সারি মুছুন">✕</button>
+            </div>
+        </template>
+    </div>
+
+    <script>
+        (function () {
+            var rows = document.getElementById('itemRows');
+            var tpl = document.getElementById('rowTpl');
+            var idx = rows.children.length;
+            function bind(row) {
+                row.querySelector('[data-remove]').addEventListener('click', function () {
+                    if (rows.children.length > 1) row.remove();
+                    else row.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+                });
+            }
+            rows.querySelectorAll('.refill-row').forEach(bind);
+            document.getElementById('addRow').addEventListener('click', function () {
+                var holder = document.createElement('div');
+                holder.innerHTML = tpl.innerHTML.split('#IDX#').join(String(idx++));
+                var row = holder.firstElementChild;
+                rows.appendChild(row);
+                bind(row);
+                row.querySelector('input').focus();
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

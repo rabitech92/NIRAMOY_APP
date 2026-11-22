@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('রিফিল সাবস্ক্রিপশন', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><p class="muted small">নিয়মিত ওষুধ সাবস্ক্রিপশন</p><h1 th:text="${s.customerName}">নাম</h1></div>
+        <a class="btn" th:href="@{/refills}">← তালিকা</a>
+    </div>
+
+    <div class="grid cols-2 mb">
+        <div class="card pad">
+            <div class="mb">
+                <span class="badge" th:classappend="${s.status.name() == 'ACTIVE'} ? 'good' : (${s.status.name() == 'PAUSED'} ? 'warn' : 'bad')" th:text="${s.status.label}"></span>
+                <span class="badge bad" th:if="${s.due}">রিফিলের সময় হয়েছে</span>
+            </div>
+            <div class="kv">
+                <div><span>মোবাইল</span><a class="link" th:href="'tel:' + ${s.customerPhone}" th:text="${s.customerPhone}"></a></div>
+                <div><span>প্ল্যান</span><b th:text="${s.planName}"></b></div>
+                <div><span>কত দিন পরপর</span><b th:text="${s.frequencyDays} + ' দিন'"></b></div>
+                <div><span>ছাড়</span><b th:text="${s.discountPercent} + '%'"></b></div>
+                <div><span>শুরুর তারিখ</span><b th:text="${@fmt.date(s.startDate)}"></b></div>
+                <div><span>পরের রিফিল</span><b th:text="${@fmt.date(s.nextRefillDate)}"></b></div>
+                <div><span>শাখা</span><b th:text="${s.branch.name}"></b></div>
+                <div><span>এ পর্যন্ত রিফিল</span><b th:text="${s.cycles} + ' বার'"></b></div>
+            </div>
+            <p class="small mt" th:if="${s.note}" th:text="'নোট: ' + ${s.note}"></p>
+            <p class="small mt" th:if="${s.lastSaleId != null}">সর্বশেষ বিল:
+                <a class="link" th:href="@{/sales/{id}(id=${s.lastSaleId})}" th:text="${@fmt.dateTime(s.lastBilledAt)}"></a></p>
+        </div>
+
+        <div class="card pad">
+            <h2 class="mb">ওষুধের তালিকা</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>ওষুধ</th><th class="right">পরিমাণ</th></tr></thead>
+                <tbody>
+                <tr th:each="i : ${s.items}"><td th:text="${i.medicineName}"></td>
+                    <td class="right" th:text="${i.quantity} + ' ' + ${i.unit}"></td></tr>
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+
+    <div class="card pad mb" th:if="${s.status.name() == 'ACTIVE'}">
+        <h2 class="mb">এখন রিফিলের বিল করুন</h2>
+        <p class="muted small mb">স্টক থেকে ওষুধ কেটে ইনভয়েস তৈরি হবে (ছাড় সহ) এবং পরের রিফিলের তারিখ স্বয়ংক্রিয়ভাবে এগিয়ে যাবে।</p>
+        <form th:action="@{/refills/{id}/bill(id=${s.id})}" method="post" class="row gap wrap"
+              onsubmit="return confirm('রিফিলের বিল তৈরি করবেন?')">
+            <select class="field" style="width:auto" name="method" aria-label="পেমেন্ট পদ্ধতি">
+                <option th:each="m : ${methods}" th:value="${m.name()}" th:text="${m.label}"></option>
+            </select>
+            <button class="btn primary" type="submit">🧾 রিফিল বিল করুন</button>
+        </form>
+    </div>
+
+    <div class="card pad" th:if="${s.status.name() != 'CANCELLED'}">
+        <h2 class="mb">ব্যবস্থাপনা</h2>
+        <div class="row gap wrap">
+            <form class="inline-form" th:action="@{/refills/{id}/next-date(id=${s.id})}" method="post">
+                <input class="field" style="width:auto" type="date" name="date" th:value="${s.nextRefillDate}" aria-label="পরের রিফিলের তারিখ" required>
+                <button class="btn sm" type="submit">তারিখ বদলান</button>
+            </form>
+            <form th:if="${s.status.name() == 'ACTIVE'}" th:action="@{/refills/{id}/pause(id=${s.id})}" method="post">
+                <button class="btn sm" type="submit">⏸ বিরতিতে রাখুন</button></form>
+            <form th:if="${s.status.name() == 'PAUSED'}" th:action="@{/refills/{id}/resume(id=${s.id})}" method="post">
+                <button class="btn sm primary" type="submit">▶ আবার চালু করুন</button></form>
+            <form th:action="@{/refills/{id}/cancel(id=${s.id})}" method="post"
+                  onsubmit="return confirm('সাবস্ক্রিপশনটি বাতিল করবেন?')">
+                <button class="btn sm danger" type="submit">বাতিল করুন</button></form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

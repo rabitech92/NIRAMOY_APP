@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('রিপোর্ট ও বিশ্লেষণ', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1>রিপোর্ট ও বিশ্লেষণ</h1><p class="muted">তারিখ ও শাখা অনুযায়ী ব্যবসায়িক চিত্র (শাখা ওপরের ড্রপডাউন থেকে নির্বাচিত)</p></div></div>
+
+    <div class="card mb">
+        <form class="toolbar" style="border:0;grid-template-columns:1fr 1fr auto" method="get" th:action="@{/reports}">
+            <div><label class="label" for="from">শুরুর তারিখ</label><input id="from" class="field" type="date" name="from" th:value="${from}" required></div>
+            <div><label class="label" for="to">শেষ তারিখ</label><input id="to" class="field" type="date" name="to" th:value="${to}" required></div>
+            <button class="btn primary" type="submit">ফিল্টার প্রয়োগ</button>
+        </form>
+    </div>
+
+    <div class="grid cols-4 mb">
+        <div class="card stat"><div class="k" style="margin:0">মোট বিক্রয়</div><div class="v" th:text="${@fmt.money(r.totalSales)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">মোট লাভ (বিক্রয় থেকে)</div><div class="v" th:text="${@fmt.money(r.profit)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">মোট খরচ (দোকানের খরচ)</div><div class="v" th:text="${@fmt.money(r.expenses)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">নিট লাভ (লাভ − খরচ)</div><div class="v" th:text="${@fmt.money(r.netProfit)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">ইনভয়েস সংখ্যা</div><div class="v" th:text="${r.invoices}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">মোট ছাড়</div><div class="v" th:text="${@fmt.money(r.discount)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">VAT সংগ্রহ</div><div class="v" th:text="${@fmt.money(r.vat)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">মেয়াদোত্তীর্ণ স্টক (ক্রয়মূল্যে)</div><div class="v" th:text="${@fmt.money(r.expiredStockValue)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">মেয়াদ ঘনিয়ে এসেছে (৯০ দিন)</div><div class="v" th:text="${r.expiring} + ' ব্যাচ'"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">কম স্টক / বকেয়া প্রাপ্য</div>
+            <div class="v" th:text="${r.lowStock} + 'টি · ' + ${@fmt.money(r.receivable)}" style="font-size:16px"></div></div>
+    </div>
+
+    <div class="grid cols-2">
+        <div class="card pad"><h2>বিক্রয়ের প্রবণতা</h2>
+            <div class="chart-box mt"><canvas id="reportChart" role="img" aria-label="দিনভিত্তিক বিক্রয়"></canvas></div></div>
+        <div class="card pad"><h2 class="mb">শাখার কার্যক্রম</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>শাখা</th><th class="right">বিক্রয়</th><th class="right">লাভ</th></tr></thead>
+                <tbody>
+                <tr th:each="b : ${r.branchRows}"><td th:text="${b.name}"></td>
+                    <td class="right" th:text="${@fmt.money(b.sales)}"></td><td class="right" th:text="${@fmt.money(b.profit)}"></td></tr>
+                <tr th:if="${#lists.isEmpty(r.branchRows)}"><td colspan="3" class="empty">এই সময়ে কোনো বিক্রয় নেই।</td></tr>
+                </tbody>
+            </table></div></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script th:inline="javascript">
+        (function () {
+            if (!window.Chart) return;
+            new Chart(document.getElementById('reportChart'), {
+                type: 'bar',
+                data: { labels: /*[[${r.labels}]]*/ [], datasets: [{ data: /*[[${r.values}]]*/ [],
+                        backgroundColor: '#2baf83', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                           scales: { x: { grid: { display: false } }, y: { beginAtZero: true } } }
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

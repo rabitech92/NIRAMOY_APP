@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('ওষুধ যোগ করুন', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1>নতুন ওষুধ / ব্যাচ</h1>
+        <p class="muted">বর্তমান শাখার স্টকে যোগ হবে</p></div></div>
+    <div class="card pad" style="max-width:760px">
+        <form th:action="@{/inventory/save}" th:object="${form}" method="post" novalidate>
+            <div class="grid cols-2">
+                <div th:replace="~{fragments/form :: input('ওষুধের নাম','name','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('জেনেরিক নাম','genericName','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('কোম্পানির নাম','companyName','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('ক্যাটাগরি','category','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('বারকোড','barcode','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('ব্যাচ / লট','batchNo','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('মেয়াদ','expiryDate','date',null)}"></div>
+                <div th:replace="~{fragments/form :: input('বক্স / তাক নম্বর (কোথায় রাখলেন)','boxNo','text',null)}"></div>
+            </div>
+
+            <h2 class="mt mb">স্টক</h2>
+            <div class="grid cols-3">
+                <div th:replace="~{fragments/form :: input('এক পাতায় কত পিস','stripSize','number','1')}"></div>
+                <div th:replace="~{fragments/form :: input('কত পাতা','stockStrips','number','1')}"></div>
+                <div th:replace="~{fragments/form :: input('খুচরা কত পিস','stockPieces','number','1')}"></div>
+            </div>
+            <p class="muted small mb">মোট স্টক = পাতা × এক পাতায় পিস + খুচরা পিস। যেমন ১০ পিসের পাতা, ৩ পাতা ও ৪ পিস দিলে মোট ৩৪ পিস।</p>
+
+            <h2 class="mt mb">দাম</h2>
+            <div class="grid cols-3">
+                <div th:replace="~{fragments/form :: input('পিস ক্রয়মূল্য (৳)','costPrice','number','0.01')}"></div>
+                <div th:replace="~{fragments/form :: input('পিস বিক্রয়মূল্য (৳)','salePrice','number','0.01')}"></div>
+                <div th:replace="~{fragments/form :: input('পাতা বিক্রয়মূল্য (৳) — খালি রাখলে পিস দাম × পিস সংখ্যা','stripPrice','number','0.01')}"></div>
+            </div>
+            <div class="grid cols-3">
+                <div th:replace="~{fragments/form :: input('পুনঃঅর্ডার সীমা (পিস)','reorderLevel','number','1')}"></div>
+            </div>
+            <div class="row gap mt">
+                <button class="btn primary" type="submit">সংরক্ষণ করুন</button>
+                <a class="btn" th:href="@{/inventory}">বাতিল</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

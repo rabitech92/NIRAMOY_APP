@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('শাখা ও প্রতিষ্ঠান', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1>শাখা ও প্রতিষ্ঠান</h1><p class="muted">বহু-শাখা ব্যবস্থাপনা</p></div></div>
+    <div class="grid cols-main">
+        <div class="grid cols-2" style="align-content:start">
+            <div class="card pad" th:each="b : ${list}">
+                <div class="row between"><h2 th:text="${b.name}"></h2>
+                    <span class="badge" th:classappend="${b.active} ? 'good' : 'bad'" th:text="${b.active} ? 'সক্রিয়' : 'নিষ্ক্রিয়'"></span></div>
+                <p class="muted small mt" th:text="'ম্যানেজার: ' + (${b.managerName} ?: '—')"></p>
+                <p class="muted small" th:text="${b.address ?: '—'}"></p>
+                <p class="muted small" th:text="${b.phone ?: '—'}"></p>
+                <form class="mt" th:action="@{/admin/branches/{id}/toggle(id=${b.id})}" method="post">
+                    <button class="btn sm" type="submit" th:text="${b.active} ? 'নিষ্ক্রিয় করুন' : 'সক্রিয় করুন'"></button>
+                </form>
+            </div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">নতুন শাখা</h2>
+            <form th:action="@{/admin/branches}" th:object="${form}" method="post" novalidate>
+                <div th:replace="~{fragments/form :: input('শাখার নাম','name','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('ঠিকানা','address','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('ফোন','phone','tel',null)}"></div>
+                <div th:replace="~{fragments/form :: input('ম্যানেজারের নাম','managerName','text',null)}"></div>
+                <button class="btn primary" type="submit">শাখা যোগ করুন</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

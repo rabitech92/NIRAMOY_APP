@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('ক্রয় তালিকা', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1 th:text="${o.orderNo}">PO</h1>
+            <p class="muted">এমপিওকে দেখানোর জন্য প্রিন্ট করুন; তিনি যেগুলোর অর্ডার নেবেন সেগুলো টিক দিয়ে "অর্ডার সম্পন্ন" করুন।</p></div>
+        <div class="row gap no-print">
+            <button type="button" class="btn" onclick="window.print()">🖨 তালিকা প্রিন্ট</button>
+            <a class="btn" th:href="@{/purchases}">← তালিকা</a>
+        </div>
+    </div>
+
+    <div class="card pad mb">
+        <div class="kv">
+            <div><span>সরবরাহকারী</span><b th:text="${o.supplier.name}"></b></div>
+            <div><span>এমপিও (MPO)</span><b th:text="${o.mpoName ?: '—'}"></b></div>
+            <div><span>শাখা</span><b th:text="${o.branch.name}"></b></div>
+            <div><span>তৈরির সময়</span><b th:text="${@fmt.dateTime(o.createdAt)}"></b></div>
+            <div><span>গ্রহণকৃত পণ্যের মূল্য</span><b th:text="${@fmt.money(o.amount)}"></b></div>
+            <div><span>আদেশের অবস্থা</span><span class="badge" th:classappend="${o.status.name() == 'RECEIVED'} ? 'good' : 'warn'" th:text="${o.status.label}"></span></div>
+        </div>
+        <div class="row gap wrap mt" th:if="${o.totalItems > 0}">
+            <span class="badge soft" th:text="'মোট ' + ${o.totalItems} + 'টি'"></span>
+            <span class="badge good" th:text="'অর্ডার সম্পন্ন ' + ${o.orderedCount}"></span>
+            <span class="badge bad" th:text="'অর্ডার হয়নি ' + ${o.notOrderedCount}"></span>
+            <span class="badge soft" th:text="'গ্রহণ সম্পন্ন ' + ${o.receivedCount}"></span>
+            <span class="badge bad" th:if="${o.urgentOpenCount > 0}" th:text="'জরুরি বাকি ' + ${o.urgentOpenCount}"></span>
+        </div>
+        <p class="muted small mt" th:if="${o.totalItems == 0}">এটি পুরনো ধরনের আদেশ (আইটেম তালিকা নেই): <span th:text="${o.itemsSummary}"></span></p>
+    </div>
+
+    <div class="card mb">
+        <div class="pad no-print" th:if="${o.status.name() == 'PENDING' and o.totalItems > 0}">
+            <form id="bulkForm" th:action="@{/purchases/orders/{id}/mark-ordered(id=${o.id})}" method="post" class="row gap wrap">
+                <button type="submit" class="btn primary">✔ নির্বাচিত আইটেম "অর্ডার সম্পন্ন" করুন</button>
+                <label class="small row gap"><input type="checkbox" id="checkAll"> সব "অর্ডার হয়নি" আইটেম নির্বাচন</label>
+            </form>
+        </div>
+        <div class="table-wrap"><table>
+            <thead><tr>
+                <th class="no-print"></th><th>#</th><th>ব্র্যান্ড নাম</th><th>জেনেরিক নাম</th><th>কোম্পানি</th>
+                <th class="right">পরিমাণ</th><th>অগ্রাধিকার</th><th>অবস্থা</th><th class="no-print">কাজ</th>
+            </tr></thead>
+            <tbody>
+            <tr th:each="i, st : ${o.items}">
+                <td class="no-print"><input type="checkbox" name="itemIds" form="bulkForm" th:value="${i.id}"
+                                            th:if="${i.status.name() == 'NOT_ORDERED'}" class="rowCheck" aria-label="নির্বাচন"></td>
+                <td th:text="${st.count}"></td>
+                <td><b th:text="${i.brandName}"></b></td>
+                <td th:text="${i.genericName ?: '—'}"></td>
+                <td th:text="${i.companyName ?: '—'}"></td>
+                <td class="right" th:text="${i.quantity} + ' ' + ${i.unit}"></td>
+                <td><span class="badge" th:classappend="${i.priority.name() == 'URGENT'} ? 'bad' : 'soft'" th:text="${i.priority.label}"></span></td>
+                <td><span class="badge"
+                          th:classappend="${i.status.name() == 'ORDERED'} ? 'good' : (${i.status.name() == 'NOT_ORDERED'} ? 'bad' : 'soft')"
+                          th:text="${i.status.label}"></span></td>
+                <td class="no-print">
+                    <div class="row gap wrap">
+                        <a class="btn sm primary" th:if="${i.status.name() == 'ORDERED'}"
+                           th:href="@{/purchases/orders/{id}/items/{iid}/receive(id=${o.id},iid=${i.id})}">পণ্য গ্রহণ →</a>
+                        <form th:if="${i.status.name() == 'ORDERED'}" th:action="@{/purchases/orders/{id}/items/{iid}/unorder(id=${o.id},iid=${i.id})}" method="post">
+                            <button class="btn sm" type="submit">অর্ডার বাতিল</button></form>
+                        <form th:if="${i.status.name() != 'RECEIVED' and o.totalItems > 1}"
+                              th:action="@{/purchases/orders/{id}/items/{iid}/delete(id=${o.id},iid=${i.id})}" method="post"
+                              onsubmit="return confirm('এই আইটেমটি তালিকা থেকে মুছবেন?')">
+                            <button class="btn sm danger" type="submit">মুছুন</button></form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${o.totalItems == 0}"><td colspan="9" class="empty">এই আদেশে কোনো আইটেম নেই। নিচ থেকে আইটেম যোগ করুন।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad mb no-print" th:if="${o.status.name() == 'PENDING'}">
+        <h2 class="mb">তালিকায় আরও ওষুধ যোগ করুন</h2>
+        <form th:action="@{/purchases/orders/{id}/items(id=${o.id})}" th:object="${itemForm}" method="post" novalidate>
+            <div class="item-head"><span>ব্র্যান্ড নাম *</span><span>জেনেরিক নাম</span><span>কোম্পানির নাম</span>
+                <span>পরিমাণ *</span><span>একক</span><span>অবস্থা</span><span></span></div>
+            <div class="item-row">
+                <input class="field" th:field="*{brandName}" placeholder="ব্র্যান্ড নাম" aria-label="ব্র্যান্ড নাম">
+                <input class="field" th:field="*{genericName}" placeholder="জেনেরিক নাম" aria-label="জেনেরিক নাম">
+                <input class="field" th:field="*{companyName}" placeholder="কোম্পানির নাম" aria-label="কোম্পানির নাম">
+                <input class="field" type="number" min="1" step="1" th:field="*{quantity}" placeholder="০" aria-label="পরিমাণ">
+                <select class="field" th:field="*{unit}" aria-label="একক"><option th:each="u : ${units}" th:value="${u}" th:text="${u}"></option></select>
+                <select class="field" th:field="*{priority}" aria-label="অগ্রাধিকার"><option th:each="p : ${priorities}" th:value="${p.name()}" th:text="${p.label}"></option></select>
+                <button class="btn sm primary" type="submit">যোগ করুন</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card pad no-print" th:if="${o.amount.signum() > 0}" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER','BRANCH_MANAGER','INVENTORY_MANAGER')">
+        <h2 class="mb">ক্রয় ফেরত (সরবরাহকারীকে)</h2>
+        <form th:action="@{/purchases/orders/{id}/return(id=${o.id})}" th:object="${returnForm}" method="post" novalidate style="max-width:520px">
+            <div th:replace="~{fragments/form :: input('ফেরতের মূল্য (৳)','amount','number','0.01')}"></div>
+            <div th:replace="~{fragments/form :: input('ফেরতের কারণ','reason','text',null)}"></div>
+            <button class="btn danger" type="submit">ক্রয় ফেরত নথিভুক্ত করুন</button>
+        </form>
+    </div>
+
+    <script>
+        (function () {
+            const all = document.getElementById('checkAll');
+            if (!all) return;
+            all.addEventListener('change', () => document.querySelectorAll('.rowCheck').forEach(c => { c.checked = all.checked; }));
+        })();
+    </script>
+</div>
+</body>
+</html>

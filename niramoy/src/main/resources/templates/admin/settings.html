@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('সেটিংস', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head"><div><h1>সেটিংস</h1><p class="muted">কর ও ইনভয়েস কনফিগারেশন</p></div></div>
+    <div class="card pad" style="max-width:520px">
+        <form th:action="@{/admin/settings}" th:object="${form}" method="post" novalidate>
+            <div th:replace="~{fragments/form :: input('ডিফল্ট VAT (%)','vatPercent','number','0.01')}"></div>
+            <div th:replace="~{fragments/form :: input('ইনভয়েস প্রিফিক্স','invoicePrefix','text',null)}"></div>
+            <p class="muted small mb">পরিবর্তন শুধু নতুন ইনভয়েসে প্রযোজ্য হবে; আগের ইনভয়েস অপরিবর্তিত থাকে।</p>
+            <button class="btn primary" type="submit">সংরক্ষণ করুন</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

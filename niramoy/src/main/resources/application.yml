@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: niramoy
+  datasource:
+    # schema = niramoy (না থাকলে নিজে থেকেই তৈরি হবে)
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/niramoy?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Dhaka&characterEncoding=UTF-8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Admin123}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update          # production-এ Flyway/Liquibase ব্যবহার করে validate করুন
+    properties:
+      hibernate:
+        jdbc.time_zone: Asia/Dhaka
+        format_sql: true
+  thymeleaf:
+    cache: false                # production-এ true করুন
+  mvc:
+    format:
+      date: iso
+      date-time: iso
+  jackson:
+    time-zone: Asia/Dhaka
+
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  error:
+    include-message: never
+    include-stacktrace: never
+
+niramoy:
+  seed:
+    demo-data: true
+    default-password: ${SEED_PASSWORD:Niramoy@123}
+
+logging:
+  level:
+    root: INFO
+    com.niramoy: DEBUG

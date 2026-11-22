@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout('গ্রাহকের বিস্তারিত', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><p class="muted small">গ্রাহকের ক্রয়ের হিসাব</p>
+            <h1 th:text="${c.name ?: 'নাম নেই'}">নাম</h1>
+            <p class="muted"><a class="link" th:href="'tel:' + ${c.phone}" th:text="${c.phone}"></a></p></div>
+        <a class="btn" th:href="@{/customers}">← সব গ্রাহক</a>
+    </div>
+
+    <div class="grid cols-4 mb">
+        <div class="card stat"><div class="k" style="margin:0">জীবনকালের মোট ক্রয়</div><div class="v" th:text="${@fmt.money(c.lifetime)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">আজ</div><div class="v" th:text="${@fmt.money(c.today)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই সপ্তাহ</div><div class="v" th:text="${@fmt.money(c.week)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই মাস</div><div class="v" th:text="${@fmt.money(c.month)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই বছর</div><div class="v" th:text="${@fmt.money(c.year)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">ইনভয়েস সংখ্যা</div><div class="v" th:text="${c.invoices}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">গড় ইনভয়েস</div><div class="v" th:text="${@fmt.money(c.average)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">বকেয়া</div><div class="v" th:text="${@fmt.money(c.due)}"></div></div>
+    </div>
+    <p class="muted small mb" th:text="'প্রথম ক্রয়: ' + ${@fmt.dateTime(c.firstAt)} + ' · শেষ ক্রয়: ' + ${@fmt.dateTime(c.lastAt)}"></p>
+
+    <div class="grid cols-2 mb">
+        <div class="card pad">
+            <h2 class="mb">দৈনিক (শেষ ৩০ দিন)</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>তারিখ</th><th class="right">ইনভয়েস</th><th class="right">টাকা</th></tr></thead>
+                <tbody>
+                <tr th:each="b : ${c.daily}"><td th:text="${b.label}"></td><td class="right" th:text="${b.invoices}"></td><td class="right" th:text="${@fmt.money(b.amount)}"></td></tr>
+                <tr th:if="${#lists.isEmpty(c.daily)}"><td colspan="3" class="empty">এই সময়ে কোনো ক্রয় নেই।</td></tr>
+                </tbody>
+            </table></div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">সাপ্তাহিক (শেষ ১২ সপ্তাহ)</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>সপ্তাহ</th><th class="right">ইনভয়েস</th><th class="right">টাকা</th></tr></thead>
+                <tbody>
+                <tr th:each="b : ${c.weekly}"><td th:text="${b.label}"></td><td class="right" th:text="${b.invoices}"></td><td class="right" th:text="${@fmt.money(b.amount)}"></td></tr>
+                <tr th:if="${#lists.isEmpty(c.weekly)}"><td colspan="3" class="empty">এই সময়ে কোনো ক্রয় নেই।</td></tr>
+                </tbody>
+            </table></div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">মাসিক (শেষ ১২ মাস)</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>মাস</th><th class="right">ইনভয়েস</th><th class="right">টাকা</th></tr></thead>
+                <tbody>
+                <tr th:each="b : ${c.monthly}"><td th:text="${b.label}"></td><td class="right" th:text="${b.invoices}"></td><td class="right" th:text="${@fmt.money(b.amount)}"></td></tr>
+                <tr th:if="${#lists.isEmpty(c.monthly)}"><td colspan="3" class="empty">এই সময়ে কোনো ক্রয় নেই।</td></tr>
+                </tbody>
+            </table></div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">বার্ষিক</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>বছর</th><th class="right">ইনভয়েস</th><th class="right">টাকা</th></tr></thead>
+                <tbody>
+                <tr th:each="b : ${c.yearly}"><td th:text="${b.label}"></td><td class="right" th:text="${b.invoices}"></td><td class="right" th:text="${@fmt.money(b.amount)}"></td></tr>
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">সবচেয়ে বেশি কেনা ওষুধ (শীর্ষ ১০)</h2>
+        <div class="table-wrap"><table style="min-width:0">
+            <thead><tr><th>#</th><th>ওষুধ</th><th class="right">কতবার কিনেছেন</th><th class="right">মোট পিস</th><th class="right">মোট টাকা</th></tr></thead>
+            <tbody>
+            <tr th:each="t, st : ${c.topItems}">
+                <td th:text="${st.count}"></td><td><b th:text="${t.name}"></b></td>
+                <td class="right" th:text="${t.times} + ' বার'"></td>
+                <td class="right" th:text="${t.pieces}"></td>
+                <td class="right" th:text="${@fmt.money(t.amount)}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(c.topItems)}"><td colspan="5" class="empty">কোনো তথ্য নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad">
+        <h2 class="mb">কেনাকাটার তালিকা (সাম্প্রতিক ৩০টি ইনভয়েস)</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>ইনভয়েস</th><th>তারিখ</th><th>কী কিনেছেন</th><th>পেমেন্ট</th><th class="right">মোট</th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${c.recent}">
+                <td><a class="link" th:href="@{/sales/{id}(id=${s.id})}" th:text="${s.invoiceNo}"></a></td>
+                <td th:text="${@fmt.dateTime(s.createdAt)}"></td>
+                <td><div class="small" th:each="i : ${s.items}" th:text="${i.medicineName} + ' × ' + ${i.quantity} + ' ' + ${i.unitLabel ?: 'পিস'}"></div></td>
+                <td th:text="${s.paymentMethod.label}"></td>
+                <td class="right"><b th:text="${@fmt.money(s.total)}"></b>
+                    <div class="small" th:if="${s.dueAmount.signum() > 0}"><span class="badge bad" th:text="'বকেয়া ' + ${@fmt.money(s.dueAmount)}"></span></div></td>
+            </tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- ব্যবহার: <div th:replace="~{fragments/form :: input('লেবেল','fieldName','text','any')}"></div> (th:object-এর ভেতরে) -->
+<div class="fld" th:fragment="input(label, field, type, step)">
+    <label class="label" th:for="${field}" th:text="${label}">লেবেল</label>
+    <input class="field" th:type="${type}" th:step="${step}" th:field="*{__${field}__}" th:errorclass="invalid">
+    <small class="error-text" th:if="${#fields.hasErrors(field)}" th:errors="*{__${field}__}"></small>
+</div>
+
+<div class="pager" th:fragment="pager(page, path)" th:if="${page.totalPages > 0}" th:with="t=${tab ?: ''}">
+    <span th:text="'মোট ' + ${page.totalElements} + 'টি · পৃষ্ঠা ' + (${page.number} + 1) + '/' + ${page.totalPages}">মোট</span>
+    <div class="row gap">
+        <a class="btn secondary sm" th:classappend="${page.first} ? 'disabled'"
+           th:href="@{${path}(page=${page.number - 1}, q=${q}, filter=${filter}, tab=${t})}">আগের</a>
+        <a class="btn secondary sm" th:classappend="${page.last} ? 'disabled'"
+           th:href="@{${path}(page=${page.number + 1}, q=${q}, filter=${filter}, tab=${t})}">পরের</a>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('খরচের বিবরণ', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><p class="muted small">খরচের বিবরণ</p><h1 th:text="${e.expenseNo}">EXP</h1></div>
+        <div class="row gap wrap">
+            <a class="btn" th:href="@{/expenses/list}">← তালিকা</a>
+            <a class="btn" th:if="${!e.voided}" th:href="@{/expenses/{id}/edit(id=${e.id})}">সম্পাদনা</a>
+        </div>
+    </div>
+
+    <div class="alert bad" th:if="${e.voided}">
+        এই খরচ বাতিল করা হয়েছে (হিসাব থেকে বাদ)। কারণ: <b th:text="${e.voidReason}"></b>
+        — <span th:text="${e.voidedBy} + ', ' + ${@fmt.dateTime(e.voidedAt)}"></span>
+    </div>
+
+    <div class="grid cols-2 mb">
+        <div class="card pad">
+            <div class="mb">
+                <span class="badge" th:classappend="${e.status.name() == 'PAID'} ? 'good' : (${e.status.name() == 'PARTIAL'} ? 'warn' : 'bad')" th:text="${e.status.label}"></span>
+            </div>
+            <div class="kv">
+                <div><span>তারিখ</span><b th:text="${@fmt.date(e.expenseDate)}"></b></div>
+                <div><span>শাখা</span><b th:text="${e.branch.name}"></b></div>
+                <div><span>ক্যাটাগরি</span><b th:text="${e.category.name}"></b></div>
+                <div><span>উপ-ক্যাটাগরি</span><b th:text="${e.subCategory != null} ? ${e.subCategory.name} : '—'"></b></div>
+                <div><span>কাকে দেওয়া হয়েছে</span><b th:text="${e.paidTo ?: '—'}"></b></div>
+                <div><span>রেফারেন্স নং</span><b th:text="${e.referenceNo ?: '—'}"></b></div>
+                <div><span>মোট খরচ</span><b th:text="${@fmt.money(e.amount)}"></b></div>
+                <div><span>পরিশোধিত</span><b th:text="${@fmt.money(e.paidAmount)}"></b></div>
+                <div><span>বকেয়া</span><b th:text="${@fmt.money(e.dueAmount)}"></b></div>
+                <div><span>এন্ট্রি করেছেন</span><b th:text="${e.createdBy} + ', ' + ${@fmt.dateTime(e.createdAt)}"></b></div>
+            </div>
+            <p class="small mt" th:if="${e.description}">বিবরণ: <span th:text="${e.description}"></span></p>
+            <p class="small muted" th:if="${e.updatedBy}" th:text="'সর্বশেষ পরিবর্তন: ' + ${e.updatedBy} + ', ' + ${@fmt.dateTime(e.updatedAt)}"></p>
+        </div>
+
+        <div class="card pad" th:if="${!e.voided and e.dueAmount.signum() > 0}">
+            <h2 class="mb">বাকি পরিশোধ</h2>
+            <p class="muted small mb" th:text="'বকেয়া: ' + ${@fmt.money(e.dueAmount)}"></p>
+            <form th:action="@{/expenses/{id}/pay(id=${e.id})}" th:object="${payForm}" method="post" novalidate>
+                <div th:replace="~{fragments/form :: input('পরিমাণ (৳)','amount','number','0.01')}"></div>
+                <div class="fld"><label class="label" for="method">পেমেন্ট পদ্ধতি</label>
+                    <select class="field" id="method" th:field="*{method}">
+                        <option th:each="m : ${payMethods}" th:value="${m.name()}" th:text="${m.label}"></option>
+                    </select></div>
+                <div th:replace="~{fragments/form :: input('রেফারেন্স / ট্রানজেকশন আইডি','referenceNo','text',null)}"></div>
+                <button class="btn primary" type="submit">পেমেন্ট নথিভুক্ত করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">পেমেন্টের ইতিহাস</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>তারিখ</th><th>পদ্ধতি</th><th class="right">পরিমাণ</th><th>রেফারেন্স</th><th>কে দিয়েছেন</th></tr></thead>
+            <tbody>
+            <tr th:each="p : ${e.payments}">
+                <td th:text="${@fmt.date(p.paidOn)}"></td><td th:text="${p.method.label}"></td>
+                <td class="right" th:text="${@fmt.money(p.amount)}"></td>
+                <td th:text="${p.referenceNo ?: '—'}"></td><td th:text="${p.paidBy ?: '—'}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(e.payments)}"><td colspan="5" class="empty">এখনো কোনো পেমেন্ট হয়নি।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad" th:if="${!e.voided}" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')">
+        <h2 class="mb">খরচ বাতিল করুন</h2>
+        <p class="muted small mb">ভুল এন্ট্রি হলে মোছার বদলে বাতিল করা হয়; রেকর্ড থাকে, কিন্তু সব হিসাব ও রিপোর্ট থেকে বাদ যায়।</p>
+        <form class="row gap wrap" th:action="@{/expenses/{id}/void(id=${e.id})}" method="post"
+              onsubmit="return confirm('এই খরচ বাতিল করবেন?')">
+            <input class="field" style="max-width:420px" name="reason" placeholder="বাতিলের কারণ (আবশ্যক)" required aria-label="বাতিলের কারণ">
+            <button class="btn danger" type="submit">বাতিল করুন</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

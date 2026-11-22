@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('ক্রয়-বিক্রয় ও স্টক হিসাব', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>ক্রয়-বিক্রয় ও স্টক হিসাব</h1>
+            <p class="muted">স্টকে কত টাকার মাল আছে, কোন মাসে/বছরে কত ক্রয় ও বিক্রয় হয়েছে এবং লাভ কত (বর্তমান শাখা অনুযায়ী)</p></div>
+    </div>
+
+    <h2 class="mb">বর্তমান স্টক</h2>
+    <div class="grid cols-4 mb">
+        <div class="card stat"><div class="k" style="margin:0">স্টকে মালের মূল্য (ক্রয়মূল্যে)</div><div class="v" th:text="${@fmt.money(s.stock.costValue)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">স্টকের বিক্রয়মূল্য</div><div class="v" th:text="${@fmt.money(s.stock.saleValue)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">সম্ভাব্য লাভ (সব বিক্রি হলে)</div><div class="v" th:text="${@fmt.money(s.stock.potentialProfit)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">মোট পিস · ব্যাচ</div><div class="v" th:text="${s.stock.units} + ' পিস · ' + ${s.stock.batches} + ' ব্যাচ'" style="font-size:17px"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">মেয়াদোত্তীর্ণ মাল (ক্রয়মূল্যে)</div><div class="v" th:text="${@fmt.money(s.stock.expiredCost)}" style="color:var(--bad)"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">৯০ দিনে মেয়াদ শেষ হবে (ক্রয়মূল্যে)</div><div class="v" th:text="${@fmt.money(s.stock.expiringCost)}" style="color:var(--warn)"></div></div>
+    </div>
+
+    <h2 class="mb">বিক্রয় ও ক্রয় এক নজরে</h2>
+    <div class="grid cols-4 mb">
+        <div class="card stat"><div class="k" style="margin:0">আজকের বিক্রয়</div><div class="v" th:text="${@fmt.money(s.salesToday)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই সপ্তাহের বিক্রয়</div><div class="v" th:text="${@fmt.money(s.salesWeek)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই মাসের বিক্রয়</div><div class="v" th:text="${@fmt.money(s.salesMonth)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই বছরের বিক্রয়</div><div class="v" th:text="${@fmt.money(s.salesYear)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই মাসের ক্রয় (নিট)</div><div class="v" th:text="${@fmt.money(s.purchaseMonth)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">এই বছরের ক্রয় (নিট)</div><div class="v" th:text="${@fmt.money(s.purchaseYear)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">সর্বমোট বিক্রয়</div><div class="v" th:text="${@fmt.money(s.salesTotal)}"></div></div>
+        <div class="card stat"><div class="k" style="margin:0">সর্বমোট ক্রয় (নিট)</div><div class="v" th:text="${@fmt.money(s.purchaseTotal)}"></div></div>
+    </div>
+
+    <div class="card pad mb">
+        <h2>মাসভিত্তিক ক্রয় বনাম বিক্রয় (শেষ ১২ মাস)</h2>
+        <div class="chart-box mt" style="height:280px"><canvas id="bizChart" role="img" aria-label="মাসিক ক্রয় ও বিক্রয়"></canvas></div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">মাসিক হিসাব (শেষ ১২ মাস)</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>মাস</th><th class="right">ক্রয়</th><th class="right">ক্রয় ফেরত</th><th class="right">নিট ক্রয়</th>
+                <th class="right">বিক্রয়</th><th class="right">লাভ</th><th class="right">ইনভয়েস</th><th class="right">মাস শেষে স্টক</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${s.months}">
+                <td><b th:text="${r.label}"></b></td>
+                <td class="right" th:text="${@fmt.money(r.purchases)}"></td>
+                <td class="right" th:text="${@fmt.money(r.returns)}"></td>
+                <td class="right"><b th:text="${@fmt.money(r.netPurchases)}"></b></td>
+                <td class="right"><b th:text="${@fmt.money(r.sales)}"></b></td>
+                <td class="right" th:text="${@fmt.money(r.profit)}"></td>
+                <td class="right" th:text="${r.invoices}"></td>
+                <td class="right" th:text="${r.stockEnd != null} ? ${@fmt.money(r.stockEnd)} : '—'"></td>
+            </tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">বার্ষিক হিসাব</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>বছর</th><th class="right">ক্রয়</th><th class="right">ক্রয় ফেরত</th><th class="right">নিট ক্রয়</th>
+                <th class="right">বিক্রয়</th><th class="right">লাভ</th><th class="right">ইনভয়েস</th><th class="right">বছর শেষে স্টক</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${s.years}">
+                <td><b th:text="${r.label}"></b></td>
+                <td class="right" th:text="${@fmt.money(r.purchases)}"></td>
+                <td class="right" th:text="${@fmt.money(r.returns)}"></td>
+                <td class="right"><b th:text="${@fmt.money(r.netPurchases)}"></b></td>
+                <td class="right"><b th:text="${@fmt.money(r.sales)}"></b></td>
+                <td class="right" th:text="${@fmt.money(r.profit)}"></td>
+                <td class="right" th:text="${r.invoices}"></td>
+                <td class="right" th:text="${r.stockEnd != null} ? ${@fmt.money(r.stockEnd)} : '—'"></td>
+            </tr>
+            </tbody>
+        </table></div>
+        <p class="muted small mt">"লাভ" = বিক্রয়মূল্য − ক্রয়মূল্য − ছাড় (দোকানের খরচ বাদ দেওয়া নয়; খরচসহ নিট লাভ দেখতে রিপোর্ট পেজ দেখুন)।
+            "মাস/বছর শেষে স্টক" এই সুবিধা চালুর দিন থেকে প্রতি রাতে জমা হয়, তাই আগের মাসগুলোতে "—" দেখাবে।</p>
+    </div>
+
+    <div class="grid cols-2 mb">
+        <div class="card pad" th:if="${#lists.size(s.byBranch) > 1}">
+            <h2 class="mb">শাখা অনুযায়ী স্টকের মূল্য</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>শাখা</th><th class="right">ক্রয়মূল্যে</th><th class="right">বিক্রয়মূল্যে</th><th class="right">পিস</th></tr></thead>
+                <tbody><tr th:each="v : ${s.byBranch}"><td th:text="${v.name}"></td><td class="right" th:text="${@fmt.money(v.cost)}"></td>
+                    <td class="right" th:text="${@fmt.money(v.sale)}"></td><td class="right" th:text="${v.units}"></td></tr></tbody>
+            </table></div>
+        </div>
+        <div class="card pad">
+            <h2 class="mb">ক্যাটাগরি অনুযায়ী স্টকের মূল্য</h2>
+            <div class="table-wrap"><table style="min-width:0">
+                <thead><tr><th>ক্যাটাগরি</th><th class="right">ক্রয়মূল্যে</th><th class="right">বিক্রয়মূল্যে</th><th class="right">পিস</th></tr></thead>
+                <tbody>
+                <tr th:each="v : ${s.byCategory}"><td th:text="${v.name}"></td><td class="right" th:text="${@fmt.money(v.cost)}"></td>
+                    <td class="right" th:text="${@fmt.money(v.sale)}"></td><td class="right" th:text="${v.units}"></td></tr>
+                <tr th:if="${#lists.isEmpty(s.byCategory)}"><td colspan="4" class="empty">স্টকে কোনো মাল নেই।</td></tr>
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+
+    <div class="card pad mb">
+        <h2 class="mb">সবচেয়ে বেশি টাকা আটকে আছে এমন ১০টি ওষুধ</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>#</th><th>ওষুধ</th><th class="right">স্টক (পিস)</th><th class="right">ক্রয়মূল্যে</th><th class="right">বিক্রয়মূল্যে</th></tr></thead>
+            <tbody>
+            <tr th:each="v, st : ${s.topStock}"><td th:text="${st.count}"></td><td><b th:text="${v.name}"></b></td>
+                <td class="right" th:text="${v.units}"></td><td class="right" th:text="${@fmt.money(v.cost)}"></td>
+                <td class="right" th:text="${@fmt.money(v.sale)}"></td></tr>
+            <tr th:if="${#lists.isEmpty(s.topStock)}"><td colspan="5" class="empty">স্টকে কোনো মাল নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+
+    <div class="card pad" sec:authorize="hasAnyRole('SUPER_ADMIN','OWNER')">
+        <h2 class="mb">ক্রয়ের হিসাব হাতে যোগ করুন</h2>
+        <p class="muted small mb">যে ক্রয় এই সফটওয়্যারে ঢোকেনি (যেমন আগের মাসের ক্রয়, বা ক্রয় তালিকা ছাড়া কেনা মাল) তার মোট টাকা এখানে যোগ করলে মাসিক ও বার্ষিক ক্রয়ে ধরা হবে।
+            সতর্কতা: যে ক্রয় ইতোমধ্যে ক্রয় তালিকা/স্টক এন্ট্রির মাধ্যমে ঢুকেছে তা আবার যোগ করলে দুইবার গোনা হবে।</p>
+        <form th:action="@{/business/purchases}" th:object="${purchaseForm}" method="post" novalidate style="max-width:760px">
+            <div class="grid cols-2">
+                <div th:replace="~{fragments/form :: input('ক্রয়ের তারিখ','date','date',null)}"></div>
+                <div th:replace="~{fragments/form :: input('মোট টাকা (৳)','amount','number','0.01')}"></div>
+                <div th:replace="~{fragments/form :: input('সরবরাহকারী (ঐচ্ছিক)','supplier','text',null)}"></div>
+                <div th:replace="~{fragments/form :: input('নোট (ঐচ্ছিক)','note','text',null)}"></div>
+            </div>
+            <button class="btn primary" type="submit">যোগ করুন</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script th:inline="javascript">
+        (function () {
+            if (!window.Chart) return;
+            new Chart(document.getElementById('bizChart'), {
+                type: 'bar',
+                data: {
+                    labels: /*[[${s.chartLabels}]]*/ [],
+                    datasets: [
+                        { label: 'নিট ক্রয়', data: /*[[${s.chartPurchases}]]*/ [], backgroundColor: '#f0a93a', borderRadius: 4 },
+                        { label: 'বিক্রয়', data: /*[[${s.chartSales}]]*/ [], backgroundColor: '#2baf83', borderRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false,
+                           scales: { x: { grid: { display: false } }, y: { beginAtZero: true } } }
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

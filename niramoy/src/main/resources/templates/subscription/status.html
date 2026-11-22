@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout('সাবস্ক্রিপশন', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="page-head">
+        <div><h1>সফটওয়্যার সাবস্ক্রিপশন</h1><p class="muted">প্ল্যান, মেয়াদ ও নবায়ন</p></div>
+        <a class="btn" sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/subscription/manage}">ব্যবস্থাপনা (যাচাই ও প্ল্যান) →</a>
+    </div>
+
+    <div class="card pad mb">
+        <div class="row gap wrap">
+            <span class="badge good" th:if="${st.level.name() == 'ACTIVE'}">সক্রিয়</span>
+            <span class="badge warn" th:if="${st.level.name() == 'GRACE'}">গ্রেস পিরিয়ড</span>
+            <span class="badge bad" th:if="${st.level.name() == 'EXPIRED'}">মেয়াদোত্তীর্ণ</span>
+            <span class="badge bad" th:if="${st.level.name() == 'NONE'}">কোনো প্ল্যান নেই</span>
+            <span class="badge warn" th:if="${st.pending}">নবায়নের অনুরোধ যাচাই অপেক্ষায়</span>
+        </div>
+        <div class="kv mt" th:if="${st.endDate != null}">
+            <div><span>বর্তমান প্ল্যান</span><b th:text="${st.planName}"></b></div>
+            <div><span>মেয়াদ শেষ</span><b th:text="${@fmt.date(st.endDate)}"></b></div>
+            <div><span>বাকি দিন</span><b th:text="${st.daysLeft >= 0} ? ${st.daysLeft} + ' দিন' : 'শেষ হয়ে গেছে'"></b></div>
+        </div>
+        <p class="muted mt" th:text="${st.message}"></p>
+    </div>
+
+    <h2 class="mb">প্ল্যান বেছে নবায়ন করুন</h2>
+    <div class="alert warn" th:text="${payInfo}"></div>
+    <div class="grid cols-3 mb">
+        <div class="card pad" th:each="p : ${plans}" th:if="${!p.free}">
+            <h2 th:text="${p.name}"></h2>
+            <p class="mt" style="font-size:26px;font-weight:700" th:text="${@fmt.money(p.price)}"></p>
+            <p class="muted small" th:text="${p.durationDays} + ' দিনের মেয়াদ'"></p>
+            <p class="small mb" th:text="'সর্বোচ্চ ' + ${p.maxBranches} + 'টি শাখা · ' + ${p.maxUsers} + ' জন ব্যবহারকারী'"></p>
+            <form th:action="@{/subscription/request}" method="post">
+                <input type="hidden" name="planId" th:value="${p.id}">
+                <div class="fld"><label class="label">পেমেন্ট পদ্ধতি</label>
+                    <select class="field" name="method" aria-label="পেমেন্ট পদ্ধতি">
+                        <option th:each="m : ${methods}" th:value="${m.name()}" th:text="${m.label}"></option>
+                    </select></div>
+                <div class="fld"><label class="label">ট্রানজেকশন আইডি (TrxID)</label>
+                    <input class="field" name="trxId" maxlength="60" aria-label="ট্রানজেকশন আইডি"></div>
+                <div class="fld"><label class="label">যে নম্বর থেকে পাঠিয়েছেন</label>
+                    <input class="field" name="senderNumber" maxlength="30" aria-label="প্রেরকের নম্বর"></div>
+                <button class="btn primary" type="submit">অনুরোধ পাঠান</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card pad">
+        <h2 class="mb">সাবস্ক্রিপশনের ইতিহাস</h2>
+        <div class="table-wrap"><table>
+            <thead><tr><th>প্ল্যান</th><th>অবস্থা</th><th>শুরু</th><th>শেষ</th><th class="right">পরিমাণ</th><th>পদ্ধতি</th><th>TrxID</th><th>অনুরোধের সময়</th></tr></thead>
+            <tbody>
+            <tr th:each="h : ${history}">
+                <td th:text="${h.plan.name}"></td>
+                <td><span class="badge" th:classappend="${h.state.name() == 'ACTIVE'} ? 'good' : (${h.state.name() == 'PENDING'} ? 'warn' : 'bad')" th:text="${h.state.label}"></span>
+                    <div class="small muted" th:if="${h.note}" th:text="${h.note}"></div></td>
+                <td th:text="${h.startDate != null} ? ${@fmt.date(h.startDate)} : '—'"></td>
+                <td th:text="${h.endDate != null} ? ${@fmt.date(h.endDate)} : '—'"></td>
+                <td class="right" th:text="${@fmt.money(h.amount)}"></td>
+                <td th:text="${h.paymentMethod != null} ? ${h.paymentMethod.label} : '—'"></td>
+                <td th:text="${h.trxId ?: '—'}"></td>
+                <td th:text="${@fmt.dateTime(h.requestedAt)}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(history)}"><td colspan="8" class="empty">কোনো রেকর্ড নেই।</td></tr>
+            </tbody>
+        </table></div>
+    </div>
+</div>
+</body>
+</html>
